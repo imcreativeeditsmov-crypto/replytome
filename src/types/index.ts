@@ -14,6 +14,9 @@ export interface UserProfile {
   bio: string;
   photoURL: string;
   instagramUrl?: string;
+  email?: string;
+  isAdmin?: boolean;
+  role?: "admin" | "creator";
   createdAt: string;
   updatedAt?: string;
 }

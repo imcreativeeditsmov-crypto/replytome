@@ -28,12 +28,15 @@ import {
   Loader2,
   AlertCircle,
   FileText,
+  ArrowRight,
+  ShieldCheck,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { InstagramIcon } from "@/components/icons/InstagramIcon";
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, userProfile, updateProfileState, isDemoMode, loading: authLoading } = useAuth();
+  const { user, userProfile, updateProfileState, isDemoMode, loading: authLoading, isAdmin } = useAuth();
 
   const [posts, setPosts] = useState<Post[]>([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
@@ -51,6 +54,7 @@ export default function DashboardPage() {
   const [editName, setEditName] = useState("");
   const [editUsername, setEditUsername] = useState("");
   const [editBio, setEditBio] = useState("");
+  const [editInstagramUrl, setEditInstagramUrl] = useState("");
   const [editPhoto, setEditPhoto] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
@@ -99,6 +103,7 @@ export default function DashboardPage() {
       setEditName(userProfile.displayName || "");
       setEditUsername(userProfile.username || "");
       setEditBio(userProfile.bio || "");
+      setEditInstagramUrl(userProfile.instagramUrl || "");
       setEditPhoto(userProfile.photoURL || "");
     }
   }, [userProfile, isEditProfileOpen]);
@@ -181,16 +186,35 @@ export default function DashboardPage() {
         }
       }
 
+      let finalIg = editInstagramUrl.trim();
+      if (finalIg) {
+        if (!finalIg.startsWith("http://") && !finalIg.startsWith("https://")) {
+          finalIg = `https://instagram.com/${finalIg.replace(/^@/, "")}`;
+        }
+      }
+
       const updated = await PostService.saveUserProfile(
         {
           ...userProfile,
           displayName: editName.trim() || userProfile.displayName,
           username: editUsername.toLowerCase().trim(),
           bio: editBio.trim(),
+          instagramUrl: finalIg,
           photoURL: editPhoto || userProfile.photoURL,
         },
         userProfile.username
       );
+
+      // Sync to server API
+      try {
+        await fetch("/api/users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user: updated }),
+        });
+      } catch (e) {
+        console.warn("Could not sync user to /api/users:", e);
+      }
 
       updateProfileState(updated);
       setIsEditProfileOpen(false);
@@ -219,6 +243,41 @@ export default function DashboardPage() {
       <Navbar />
 
       <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-8">
+        {/* Super Admin Access Banner */}
+        {isAdmin && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-6 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-white border border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm"
+          >
+            <div className="flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center font-bold shadow-md shadow-amber-500/20 flex-shrink-0">
+                <ShieldCheck className="w-5 h-5 stroke-[2.5]" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-amber-700">
+                    Platform Super Admin
+                  </span>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-800">
+                    Active Master Access
+                  </span>
+                </div>
+                <p className="text-xs text-[#48484A] mt-0.5">
+                  Access live creator metrics, platform impression analytics, resource unlock logs, and creator accounts.
+                </p>
+              </div>
+            </div>
+            <Link
+              href="/admin"
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#1D1D1F] hover:bg-black text-white text-xs font-semibold shadow-md transition-all whitespace-nowrap w-full sm:w-auto"
+            >
+              <span>Open Admin Console</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </motion.div>
+        )}
+
         {/* Top Profile Card */}
         <section className="bg-white rounded-[28px] border border-[#E5E5EA] p-6 sm:p-8 shadow-sm mb-8">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
@@ -614,6 +673,24 @@ export default function DashboardPage() {
                     value={editUsername}
                     onChange={(e) => setEditUsername(e.target.value.toLowerCase().replace(/\s+/g, ""))}
                     className="w-full pl-8 pr-3.5 py-2.5 rounded-xl bg-[#F5F5F7] border border-[#E5E5EA] text-sm font-mono text-[#1D1D1F] focus:bg-white focus:border-[#0071E3] outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-[#1D1D1F] mb-1">
+                  Instagram Profile Link
+                </label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-pink-500">
+                    <InstagramIcon className="w-4 h-4" />
+                  </span>
+                  <input
+                    type="text"
+                    value={editInstagramUrl}
+                    onChange={(e) => setEditInstagramUrl(e.target.value)}
+                    placeholder="https://instagram.com/yourhandle"
+                    className="w-full pl-9 pr-3.5 py-2.5 rounded-xl bg-[#F5F5F7] border border-[#E5E5EA] text-xs text-[#1D1D1F] focus:bg-white focus:border-[#0071E3] outline-none"
                   />
                 </div>
               </div>

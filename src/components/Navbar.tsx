@@ -12,15 +12,17 @@ import {
 } from "lucide-react";
 
 export const Navbar: React.FC = () => {
-  const { userProfile } = useAuth();
+  const { userProfile, isAdmin } = useAuth();
   const displayName = userProfile?.displayName || "AI by Shivai";
+  const username = userProfile?.username || "aibyshivai";
   const avatarUrl = userProfile?.photoURL || "/avatar.png";
-  const instagramUrl = userProfile?.instagramUrl || "https://www.instagram.com/aibyshivai/";
+  const instagramUrl =
+    userProfile?.instagramUrl || `https://www.instagram.com/${username}/`;
 
   return (
     <header className="sticky top-0 z-40 w-full frosted-nav transition-all">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-        {/* Brand: Shivai's Avatar + Name */}
+        {/* Brand: Creator Avatar + Name */}
         <Link href="/" className="flex items-center gap-2.5 group">
           <div className="w-9 h-9 rounded-full overflow-hidden bg-[#F5F5F7] border border-[#E5E5EA] shadow-sm group-hover:scale-105 transition-transform flex-shrink-0">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -34,11 +36,11 @@ export const Navbar: React.FC = () => {
             <span className="font-bold text-sm tracking-tight text-[#1D1D1F] flex items-center gap-1.5">
               <span>{displayName}</span>
               <span className="text-[10px] font-semibold bg-[#0071E3]/10 text-[#0071E3] px-1.5 py-0.2 rounded-full">
-                Creator
+                {isAdmin ? "Admin" : "Creator"}
               </span>
             </span>
             <span className="text-[11px] font-mono text-[#6E6E73] -mt-0.5">
-              @aibyshivai
+              @{username}
             </span>
           </div>
         </Link>
@@ -58,7 +60,7 @@ export const Navbar: React.FC = () => {
             className="hover:text-[#1D1D1F] transition-colors flex items-center gap-1.5"
           >
             <InstagramIcon className="w-3.5 h-3.5 text-[#E1306C]" />
-            <span>@aibyshivai</span>
+            <span>@{username}</span>
             <ExternalLink className="w-3 h-3 text-[#86868B]" />
           </a>
           <Link
@@ -68,10 +70,30 @@ export const Navbar: React.FC = () => {
             <LayoutDashboard className="w-3.5 h-3.5 text-[#0071E3]" />
             <span>Dashboard</span>
           </Link>
+
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-700 hover:bg-amber-500/25 transition-all"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+              <span>Admin Console</span>
+            </Link>
+          )}
         </nav>
 
         {/* Actions: Direct access to Dashboard & New Post */}
         <div className="flex items-center gap-2.5">
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className="hidden sm:inline-flex md:hidden items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-700 hover:bg-amber-500/25 transition-all"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+              <span>Admin</span>
+            </Link>
+          )}
+
           <a
             href={instagramUrl}
             target="_blank"

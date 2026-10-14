@@ -16,6 +16,8 @@ import {
   AtSign,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { InstagramIcon } from "@/components/icons/InstagramIcon";
+import { UserProfile } from "@/types";
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -24,6 +26,7 @@ export default function OnboardingPage() {
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
   const [bio, setBio] = useState("");
+  const [instagramUrl, setInstagramUrl] = useState("");
   const [photoURL, setPhotoURL] = useState("");
   const [copiedLink, setCopiedLink] = useState(false);
 
@@ -50,6 +53,7 @@ export default function OnboardingPage() {
       setDisplayName(user.displayName || "");
       const suggestedUsername = slugify(user.displayName || "creator").replace(/-/g, "_");
       setUsername(suggestedUsername);
+      setInstagramUrl(`https://instagram.com/${suggestedUsername}`);
       setPhotoURL(user.photoURL || "");
     }
   }, [user, userProfile, authLoading, router]);
@@ -131,18 +135,42 @@ export default function OnboardingPage() {
 
     setSubmitting(true);
     try {
-      const profile = await PostService.saveUserProfile({
+      let finalIg = instagramUrl.trim();
+      if (finalIg) {
+        if (!finalIg.startsWith("http://") && !finalIg.startsWith("https://")) {
+          finalIg = `https://instagram.com/${finalIg.replace(/^@/, "")}`;
+        }
+      } else {
+        finalIg = `https://instagram.com/${username.toLowerCase().trim()}`;
+      }
+
+      const profile: UserProfile = {
         uid: user.uid,
         displayName: displayName.trim() || "Creator",
         username: username.toLowerCase().trim(),
         bio: bio.trim(),
+        instagramUrl: finalIg,
+        email: user.email || undefined,
         photoURL:
           photoURL ||
           `https://api.dicebear.com/7.x/identicon/svg?seed=${username}`,
         createdAt: new Date().toISOString(),
-      });
+      };
 
-      updateProfileState(profile);
+      const saved = await PostService.saveUserProfile(profile);
+
+      // Persist to server API as well
+      try {
+        await fetch("/api/users", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ user: saved }),
+        });
+      } catch (e) {
+        console.warn("Could not sync to /api/users:", e);
+      }
+
+      updateProfileState(saved);
       router.push("/dashboard");
     } catch (error) {
       console.error("Error creating profile:", error);
@@ -289,6 +317,33 @@ export default function OnboardingPage() {
               {copiedLink ? <Check className="w-3.5 h-3.5 text-[#34C759]" /> : <Copy className="w-3.5 h-3.5" />}
               <span>{copiedLink ? "Copied" : "Copy"}</span>
             </button>
+          </div>
+
+          {/* Instagram Profile URL */}
+          <div>
+            <div className="flex justify-between items-center mb-1.5">
+              <label className="text-xs font-semibold text-[#1D1D1F]">
+                Instagram Profile Link
+              </label>
+              <span className="text-[11px] text-[#86868B]">
+                For Reel comments & followers
+              </span>
+            </div>
+            <div className="relative">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-pink-500">
+                <InstagramIcon className="w-4 h-4" />
+              </div>
+              <input
+                type="text"
+                value={instagramUrl}
+                onChange={(e) => setInstagramUrl(e.target.value)}
+                placeholder="https://instagram.com/yourhandle"
+                className="w-full pl-11 pr-4 py-3 rounded-2xl bg-[#F5F5F7] border border-[#E5E5EA] text-sm text-[#1D1D1F] placeholder-[#86868B] focus:bg-white focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20 outline-none transition-all"
+              />
+            </div>
+            <p className="text-[11px] text-[#86868B] mt-1.5 pl-1">
+              Add your Instagram profile link or handle so visitors can follow and comment on your Reels.
+            </p>
           </div>
 
           {/* Bio */}

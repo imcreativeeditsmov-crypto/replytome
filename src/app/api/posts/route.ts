@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
 
     // 1. Bulk sync from client localStorage
     if (body.posts && Array.isArray(body.posts)) {
-      ServerStorage.bulkSyncPosts(body.posts as Post[]);
+      ServerStorage.bulkSyncPosts(body.posts as Post[], body.uid);
       return NextResponse.json({
         success: true,
         message: "Posts synced successfully",

@@ -4,10 +4,13 @@ export const INITIAL_DEMO_USER: UserProfile = {
   uid: "shivai-creator-uid",
   displayName: "AI by Shivai",
   username: "aibyshivai",
+  email: "aibyshivai@gmail.com",
   bio: "AI tools, viral prompts & automated creator workflows. Comment on my Instagram Reels to unlock exclusive copyable resources.",
   photoURL: "/avatar.png",
   instagramUrl: "https://www.instagram.com/aibyshivai/",
-  createdAt: new Date().toISOString(),
+  isAdmin: true,
+  role: "admin",
+  createdAt: "2026-10-14T06:38:19.771Z",
 };
 
 export const INITIAL_DEMO_POSTS: Post[] = [
@@ -41,8 +44,32 @@ export const INITIAL_DEMO_POSTS: Post[] = [
   }
 ];
 
-const STORAGE_KEY_USER = "replyto_shivai_user_v5";
-const STORAGE_KEY_POSTS = "replyto_shivai_posts_v5";
+const STORAGE_KEY_USER = "replyto_active_user_v6";
+const STORAGE_KEY_USERS = "replyto_all_users_v6";
+const STORAGE_KEY_POSTS = "replyto_shivai_posts_v6";
+
+function getStoredUsers(): UserProfile[] {
+  if (typeof window === "undefined") return [INITIAL_DEMO_USER];
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_USERS);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch (e) {
+    console.error(e);
+  }
+  return [INITIAL_DEMO_USER];
+}
+
+function saveStoredUsers(users: UserProfile[]) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(users));
+  } catch (e) {
+    console.error(e);
+  }
+}
 
 function getStoredUser(): UserProfile {
   if (typeof window === "undefined") return INITIAL_DEMO_USER;
@@ -70,6 +97,14 @@ function saveStoredUser(user: UserProfile) {
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(user));
+    const all = getStoredUsers();
+    const idx = all.findIndex((u) => u.uid === user.uid || u.username.toLowerCase() === user.username.toLowerCase());
+    if (idx !== -1) {
+      all[idx] = user;
+    } else {
+      all.push(user);
+    }
+    saveStoredUsers(all);
   } catch (e) {
     console.error(e);
   }
@@ -85,24 +120,34 @@ function saveStoredPosts(posts: Post[]) {
 }
 
 export const MockStore = {
-  getUser(): UserProfile {
-    return getStoredUser();
+  getUser(uidOrUsername?: string): UserProfile {
+    if (!uidOrUsername) return getStoredUser();
+    const users = getStoredUsers();
+    const found = users.find(
+      (u) =>
+        u.uid === uidOrUsername ||
+        u.username.toLowerCase() === uidOrUsername.toLowerCase()
+    );
+    return found || getStoredUser();
+  },
+
+  getAllUsers(): UserProfile[] {
+    return getStoredUsers();
   },
 
   getUserByUsername(username: string): UserProfile | null {
-    const user = getStoredUser();
-    if (user.username.toLowerCase() === username.toLowerCase()) {
-      return user;
-    }
-    return null;
+    const users = getStoredUsers();
+    const found = users.find((u) => u.username.toLowerCase() === username.toLowerCase());
+    return found || null;
   },
 
   isUsernameTaken(username: string, currentUid?: string): boolean {
-    const user = getStoredUser();
-    if (user.username.toLowerCase() === username.toLowerCase()) {
-      return user.uid !== currentUid;
-    }
-    return false;
+    const users = getStoredUsers();
+    return users.some(
+      (u) =>
+        u.username.toLowerCase() === username.toLowerCase() &&
+        u.uid !== currentUid
+    );
   },
 
   updateUser(updates: Partial<UserProfile>): UserProfile {
@@ -110,6 +155,11 @@ export const MockStore = {
     const updated = { ...current, ...updates, updatedAt: new Date().toISOString() };
     saveStoredUser(updated);
     return updated;
+  },
+
+  addUser(user: UserProfile): UserProfile {
+    saveStoredUser(user);
+    return user;
   },
 
   getPosts(uid?: string): Post[] {

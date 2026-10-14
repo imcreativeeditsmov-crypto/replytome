@@ -8,7 +8,6 @@ import {
   signOut as firebaseSignOut,
 } from "firebase/auth";
 import { auth, googleProvider, isFirebaseConfigured } from "@/lib/firebase/config";
-import { PostService } from "@/lib/services/postService";
 import { MockStore, INITIAL_DEMO_USER } from "@/lib/firebase/mockData";
 import { UserProfile } from "@/types";
 
@@ -23,6 +22,7 @@ interface AuthContextType {
   user: AuthUser | null;
   userProfile: UserProfile | null;
   loading: boolean;
+  isAdmin: boolean;
   isDemoMode: boolean;
   needsOnboarding: boolean;
   signInWithGoogle: () => Promise<{ success: boolean; user: AuthUser; profile?: UserProfile | null }>;
@@ -31,6 +31,7 @@ interface AuthContextType {
     username: string;
     email?: string;
     photoURL?: string;
+    instagramUrl?: string;
   }) => Promise<{ success: boolean; user: AuthUser; profile: UserProfile }>;
   signInAsDemo: () => Promise<{ success: boolean; user: AuthUser; profile: UserProfile }>;
   signOut: () => Promise<void>;
@@ -38,39 +39,40 @@ interface AuthContextType {
   updateProfileState: (profile: UserProfile) => void;
 }
 
-const AUTH_USER_KEY = "replyto_shivai_auth_user_v3";
-const AUTH_PROFILE_KEY = "replyto_shivai_auth_profile_v3";
+const AUTH_USER_KEY = "replyto_auth_user_v6";
+const AUTH_PROFILE_KEY = "replyto_auth_profile_v6";
 
-const DEFAULT_SHIVAI_USER: AuthUser = {
+export const DEFAULT_SHIVAI_USER: AuthUser = {
   uid: "shivai-creator-uid",
   displayName: "AI by Shivai",
   email: "aibyshivai@gmail.com",
   photoURL: "/avatar.png",
 };
 
-function getInitialUser(): AuthUser {
+function getInitialUser(): AuthUser | null {
   if (typeof window === "undefined") return DEFAULT_SHIVAI_USER;
   try {
     const raw = localStorage.getItem(AUTH_USER_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (parsed && parsed.uid === DEFAULT_SHIVAI_USER.uid) {
+      if (parsed && parsed.uid) {
         return parsed;
       }
     }
   } catch (e) {
     console.error("Failed to parse cached user:", e);
   }
+  // Default to Shivai for smooth instant experience
   return DEFAULT_SHIVAI_USER;
 }
 
-function getInitialProfile(): UserProfile {
+function getInitialProfile(): UserProfile | null {
   if (typeof window === "undefined") return INITIAL_DEMO_USER;
   try {
     const raw = localStorage.getItem(AUTH_PROFILE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (parsed && (parsed.username === "aibyshivai" || parsed.uid === "shivai-creator-uid")) {
+      if (parsed && parsed.username) {
         return parsed;
       }
     }
@@ -84,6 +86,7 @@ const AuthContext = createContext<AuthContextType>({
   user: DEFAULT_SHIVAI_USER,
   userProfile: INITIAL_DEMO_USER,
   loading: false,
+  isAdmin: true,
   isDemoMode: true,
   needsOnboarding: false,
   signInWithGoogle: async () => ({ success: true, user: DEFAULT_SHIVAI_USER, profile: INITIAL_DEMO_USER }),
@@ -132,6 +135,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(false);
   }, []);
 
+  // Listen to Firebase auth state if configured
+  useEffect(() => {
+    if (isFirebaseConfigured && auth) {
+      const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+        if (fbUser) {
+          const authUser: AuthUser = {
+            uid: fbUser.uid,
+            email: fbUser.email,
+            displayName: fbUser.displayName,
+            photoURL: fbUser.photoURL,
+          };
+          setUser(authUser);
+
+          // Fetch profile from server
+          try {
+            const res = await fetch(`/api/users?uid=${encodeURIComponent(fbUser.uid)}`);
+            const data = await res.json();
+            if (data.success && data.user) {
+              setUserProfile(data.user);
+              persistSession(authUser, data.user);
+            } else {
+              setUserProfile(null);
+            }
+          } catch {
+            const local = MockStore.getUser(fbUser.uid);
+            setUserProfile(local);
+          }
+        }
+      });
+      return () => unsubscribe();
+    }
+  }, []);
+
   /**
    * Google Sign-in Handler with graceful fallback
    */
@@ -156,41 +192,66 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(authUser);
         setIsDemoMode(false);
 
-        const profile = await PostService.getUserProfile(fbUser.uid);
+        // Fetch user profile from server
+        let profile: UserProfile | null = null;
+        try {
+          const res = await fetch(`/api/users?uid=${encodeURIComponent(fbUser.uid)}`);
+          const data = await res.json();
+          if (data.success && data.user) {
+            profile = data.user;
+          }
+        } catch {
+          profile = MockStore.getUser(fbUser.uid);
+        }
+
         setUserProfile(profile);
         persistSession(authUser, profile);
 
         setLoading(false);
         return { success: true, user: authUser, profile };
       } catch (err: unknown) {
-        console.warn("Firebase Google popup error, falling back to seamless local Google login:", err);
-        // Fall back gracefully so the user is NEVER blocked
+        console.warn("Firebase Google popup error, falling back to seamless login:", err);
       }
     }
 
-    // Instant seamless login fallback (simulates Google Auth with creator account)
-    const fallbackUser = await signInAsDemo();
+    // Seamless Google sign-in fallback: creates a new creator needing onboarding
+    const newUid = `user_google_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+    const fallbackAuthUser: AuthUser = {
+      uid: newUid,
+      email: `creator_${Date.now().toString().slice(-4)}@gmail.com`,
+      displayName: "New Creator",
+      photoURL: `https://api.dicebear.com/7.x/identicon/svg?seed=${newUid}`,
+    };
+    setUser(fallbackAuthUser);
+    setUserProfile(null);
+    persistSession(fallbackAuthUser, null);
     setLoading(false);
-    return fallbackUser;
+    return { success: true, user: fallbackAuthUser, profile: null };
   };
 
   /**
-   * Sign in with customizable profile (name, username, photo)
+   * Sign in with customizable profile (name, username, photo, instagramUrl)
    */
   const signInWithCustomUser = async ({
     displayName,
     username,
     email,
     photoURL,
+    instagramUrl,
   }: {
     displayName: string;
     username: string;
     email?: string;
     photoURL?: string;
+    instagramUrl?: string;
   }): Promise<{ success: boolean; user: AuthUser; profile: UserProfile }> => {
     setLoading(true);
     const cleanUsername = username.toLowerCase().trim().replace(/[^a-z0-9._]/g, "");
-    const uid = `creator-${Date.now()}`;
+    const uid = `user_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+
+    const isSystemAdmin =
+      cleanUsername === "aibyshivai" ||
+      email?.toLowerCase().includes("aibyshivai");
 
     const authUser: AuthUser = {
       uid,
@@ -205,13 +266,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       uid,
       displayName: authUser.displayName!,
       username: cleanUsername || "creator",
+      email: authUser.email!,
       bio: "Sharing my curated resources, links & guides.",
       photoURL: authUser.photoURL!,
+      instagramUrl: instagramUrl || (cleanUsername ? `https://www.instagram.com/${cleanUsername}/` : undefined),
+      isAdmin: isSystemAdmin,
+      role: isSystemAdmin ? "admin" : "creator",
       createdAt: new Date().toISOString(),
     };
 
-    // Save to store
-    MockStore.updateUser(newProfile);
+    // Save to local store
+    MockStore.addUser(newProfile);
+
+    // Save to server
+    try {
+      await fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user: newProfile }),
+      });
+    } catch (e) {
+      console.warn("Failed to save new user to server:", e);
+    }
+
     setUser(authUser);
     setUserProfile(newProfile);
     persistSession(authUser, newProfile);
@@ -222,7 +299,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   /**
-   * One-click Demo Creator Sign-in
+   * One-click Super Admin Sign-in (AI by Shivai)
    */
   const signInAsDemo = async (): Promise<{
     success: boolean;
@@ -230,21 +307,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     profile: UserProfile;
   }> => {
     setLoading(true);
-    const demoProfile = MockStore.getUser() || INITIAL_DEMO_USER;
+    const adminProfile: UserProfile = {
+      ...INITIAL_DEMO_USER,
+      isAdmin: true,
+      role: "admin",
+    };
+
     const authUser: AuthUser = {
-      uid: demoProfile.uid,
-      displayName: demoProfile.displayName,
-      photoURL: demoProfile.photoURL,
+      uid: adminProfile.uid,
+      displayName: adminProfile.displayName,
+      photoURL: adminProfile.photoURL,
       email: "aibyshivai@gmail.com",
     };
 
     setUser(authUser);
-    setUserProfile(demoProfile);
-    persistSession(authUser, demoProfile);
+    setUserProfile(adminProfile);
+    persistSession(authUser, adminProfile);
     setIsDemoMode(true);
     setLoading(false);
 
-    return { success: true, user: authUser, profile: demoProfile };
+    return { success: true, user: authUser, profile: adminProfile };
   };
 
   /**
@@ -269,10 +351,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const refreshProfile = async () => {
     if (user?.uid) {
       try {
-        const p = await PostService.getUserProfile(user.uid);
-        if (p) {
-          setUserProfile(p);
-          persistSession(user, p);
+        const res = await fetch(`/api/users?uid=${encodeURIComponent(user.uid)}`);
+        const data = await res.json();
+        if (data.success && data.user) {
+          setUserProfile(data.user);
+          persistSession(user, data.user);
         }
       } catch (e) {
         console.error("Refresh profile error:", e);
@@ -287,6 +370,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const isAdmin = Boolean(
+    userProfile?.isAdmin ||
+      userProfile?.role === "admin" ||
+      userProfile?.username?.toLowerCase() === "aibyshivai" ||
+      user?.email?.toLowerCase().includes("aibyshivai")
+  );
+
   const needsOnboarding = Boolean(user && (!userProfile || !userProfile.username));
 
   return (
@@ -295,6 +385,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         user,
         userProfile,
         loading,
+        isAdmin,
         isDemoMode,
         needsOnboarding,
         signInWithGoogle,

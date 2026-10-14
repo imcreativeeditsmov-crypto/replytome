@@ -6,8 +6,23 @@
     "bio": "AI tools, viral prompts & automated creator workflows. Comment on my Instagram Reels to unlock exclusive copyable resources.",
     "photoURL": "/avatar.png",
     "instagramUrl": "https://www.instagram.com/aibyshivai/",
-    "createdAt": "2026-10-14T06:38:19.771Z"
+    "createdAt": "2026-10-14T06:38:19.771Z",
+    "isAdmin": true,
+    "role": "admin"
   },
+  "users": [
+    {
+      "uid": "shivai-creator-uid",
+      "displayName": "AI by Shivai",
+      "username": "aibyshivai",
+      "bio": "AI tools, viral prompts & automated creator workflows. Comment on my Instagram Reels to unlock exclusive copyable resources.",
+      "photoURL": "/avatar.png",
+      "instagramUrl": "https://www.instagram.com/aibyshivai/",
+      "createdAt": "2026-10-14T06:38:19.771Z",
+      "isAdmin": true,
+      "role": "admin"
+    }
+  ],
   "posts": [
     {
       "id": "post_1791960258914_bx6qp",
@@ -33,7 +48,7 @@
         }
       ],
       "views": 0,
-      "unlocks": 9,
+      "unlocks": 19,
       "createdAt": "2026-10-14T06:44:18.914Z",
       "updatedAt": "2026-10-14T06:44:18.914Z"
     }
