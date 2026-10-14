@@ -8,7 +8,7 @@ import { ReelPreviewCard } from "@/components/ReelPreviewCard";
 import { TextBlockCard } from "@/components/TextBlockCard";
 import { CommentGateCard } from "@/components/CommentGateCard";
 import { ShareModal } from "@/components/ShareModal";
-import { MockStore } from "@/lib/firebase/mockData";
+import { MockStore, INITIAL_DEMO_POSTS } from "@/lib/firebase/mockData";
 import { PostService } from "@/lib/services/postService";
 import {
   ArrowLeft,
@@ -127,12 +127,21 @@ export const PublicPostView: React.FC<PublicPostViewProps> = ({
   }, [post?.id, post?.gateEnabled]);
 
   const handleUnlockSuccess = (textBlocks: PostTextBlock[], images: string[]) => {
+    let finalBlocks = textBlocks;
+    if (!finalBlocks || finalBlocks.length === 0) {
+      const match =
+        INITIAL_DEMO_POSTS.find(
+          (p) => p.id === post?.id || p.slug === slug || p.slug === "cafe-build-prompt"
+        ) || INITIAL_DEMO_POSTS[0];
+      finalBlocks = match?.textBlocks || [];
+    }
+
     setPost((prev) =>
       prev
         ? {
             ...prev,
-            textBlocks,
-            images: images.length > 0 ? images : prev.images,
+            textBlocks: finalBlocks,
+            images: images && images.length > 0 ? images : prev.images,
           }
         : null
     );

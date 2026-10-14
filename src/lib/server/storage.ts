@@ -11,48 +11,50 @@ interface ServerStoreData {
 const DATA_DIR = path.join(process.cwd(), "data");
 const STORE_FILE = path.join(DATA_DIR, "store.json");
 
-function ensureStoreFile(): ServerStoreData {
-  try {
-    if (!fs.existsSync(DATA_DIR)) {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
-    }
+// In-memory cache for serverless environments
+let memoryStore: ServerStoreData | null = null;
 
+function ensureStoreFile(): ServerStoreData {
+  if (memoryStore) {
+    return memoryStore;
+  }
+
+  try {
     if (fs.existsSync(STORE_FILE)) {
       const raw = fs.readFileSync(STORE_FILE, "utf-8");
       if (raw && raw.trim().length > 0) {
         const parsed = JSON.parse(raw);
         if (parsed && parsed.posts && Array.isArray(parsed.posts)) {
+          memoryStore = parsed;
           return parsed;
         }
       }
     }
-
-    // Default seed
-    const initialData: ServerStoreData = {
-      user: INITIAL_DEMO_USER,
-      posts: INITIAL_DEMO_POSTS,
-    };
-    fs.writeFileSync(STORE_FILE, JSON.stringify(initialData, null, 2), "utf-8");
-    return initialData;
   } catch (err) {
-    console.error("Error reading server store:", err);
-    return {
-      user: INITIAL_DEMO_USER,
-      posts: INITIAL_DEMO_POSTS,
-    };
+    console.warn("Could not read store.json from disk, falling back to memory:", err);
   }
+
+  // Safe fallback seed without forcing write to disk on serverless
+  memoryStore = {
+    user: INITIAL_DEMO_USER,
+    posts: INITIAL_DEMO_POSTS,
+  };
+  return memoryStore;
 }
 
 function writeStore(data: ServerStoreData): void {
+  memoryStore = data;
   try {
     if (!fs.existsSync(DATA_DIR)) {
       fs.mkdirSync(DATA_DIR, { recursive: true });
     }
     fs.writeFileSync(STORE_FILE, JSON.stringify(data, null, 2), "utf-8");
   } catch (err) {
-    console.error("Error writing server store:", err);
+    // Silently ignore write failures on read-only serverless platforms like Vercel
+    console.warn("Server storage write skipped (read-only environment):", err);
   }
 }
+
 
 export const ServerStorage = {
   getStore(): ServerStoreData {
@@ -109,7 +111,16 @@ export const ServerStorage = {
 
   getPostById(postId: string): Post | null {
     const store = ensureStoreFile();
-    return store.posts.find((p) => p.id === postId) || null;
+    const query = postId.trim().toLowerCase();
+    return (
+      store.posts.find(
+        (p) =>
+          p.id === postId ||
+          p.slug.toLowerCase() === query ||
+          query.includes(p.slug.toLowerCase()) ||
+          p.slug.toLowerCase().includes(query)
+      ) || null
+    );
   },
 
   savePost(postData: Omit<Post, "createdAt" | "updatedAt" | "views" | "unlocks"> & { id?: string; createdAt?: string; views?: number; unlocks?: number }): Post {
