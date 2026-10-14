@@ -11,8 +11,6 @@ import {
   Loader2,
   Lock,
   User,
-  ShieldCheck,
-  LogOut,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { InstagramIcon } from "@/components/icons/InstagramIcon";
@@ -23,14 +21,8 @@ export default function LoginPage() {
   const redirectPath = searchParams.get("redirect") || "/dashboard";
 
   const {
-    user,
-    userProfile,
-    loading: authLoading,
-    isAdmin,
     signInWithGoogle,
     signInWithCustomUser,
-    signInAsDemo,
-    signOut,
   } = useAuth();
 
   const [loading, setLoading] = useState(false);
@@ -51,10 +43,6 @@ export default function LoginPage() {
     }
   }, [queryHandle]);
 
-  const handleEnterDashboard = () => {
-    router.push(redirectPath);
-  };
-
   const handleGoogleLogin = async () => {
     setLoading(true);
     setAuthErrorMessage(null);
@@ -72,18 +60,6 @@ export default function LoginPage() {
     } catch (err: any) {
       console.error("Sign in failed:", err);
       setAuthErrorMessage(err?.message || "Google sign-in failed. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDemoLogin = async () => {
-    setLoading(true);
-    try {
-      const res = await signInAsDemo();
-      if (res.success) {
-        router.push(redirectPath);
-      }
     } finally {
       setLoading(false);
     }
@@ -115,10 +91,6 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleSignOut = async () => {
-    await signOut();
   };
 
   return (
@@ -162,53 +134,6 @@ export default function LoginPage() {
               Your link in bio, but smarter. Built for Instagram Reel creators.
             </p>
           </div>
-
-          {/* If already signed in with a valid profile */}
-          {user && userProfile?.username && (
-            <div className="mb-6 p-4 rounded-2xl bg-[#F5F5F7] border border-[#E5E5EA] flex items-center justify-between gap-3 animate-in fade-in duration-200">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="w-10 h-10 rounded-full overflow-hidden bg-white border border-[#E5E5EA] flex-shrink-0">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={userProfile?.photoURL || user.photoURL || "/avatar.png"}
-                    alt="Active User"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <p className="text-xs font-bold text-[#1D1D1F] truncate">
-                      {userProfile.displayName || "Creator"}
-                    </p>
-                    {isAdmin && (
-                      <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-amber-500/20 text-amber-800">
-                        Admin
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[11px] text-[#0071E3] font-mono truncate">
-                    @{userProfile.username}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-1.5">
-                <button
-                  onClick={handleEnterDashboard}
-                  className="px-3 py-1.5 rounded-xl bg-[#0071E3] text-white text-xs font-semibold hover:bg-[#0077ED] transition-all apple-btn"
-                >
-                  Dashboard →
-                </button>
-                <button
-                  onClick={handleSignOut}
-                  title="Sign out of current account"
-                  className="p-1.5 rounded-xl bg-white border border-[#E5E5EA] text-[#6E6E73] hover:text-[#FF3B30] transition-colors"
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          )}
 
           {/* Auth Error Banner */}
           {authErrorMessage && (
