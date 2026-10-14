@@ -95,18 +95,31 @@ At 00:00, the restaurant interior is completely empty. The video must show the r
     setGoogleLoading(true);
     try {
       const res = await signInWithGoogle();
+      if (res.redirecting) {
+        return; // Page is navigating to Google accounts
+      }
       if (res.success && res.user) {
         if (!res.profile || !res.profile.username) {
           router.push("/onboarding");
         } else {
           router.push("/dashboard");
         }
+      } else if (res.popupBlocked) {
+        router.push("/login");
       } else if (res.error && res.error !== "Popup closed") {
-        alert(res.error);
+        if (res.error.toLowerCase().includes("popup")) {
+          router.push("/login");
+        } else {
+          alert(res.error);
+        }
       }
     } catch (e: any) {
       console.error("Google sign-in error:", e);
-      alert(e?.message || "Google sign-in failed. Please try again.");
+      if (e?.code === "auth/popup-blocked" || e?.message?.toLowerCase().includes("popup")) {
+        router.push("/login");
+      } else {
+        alert(e?.message || "Google sign-in failed. Please try again.");
+      }
     } finally {
       setGoogleLoading(false);
     }

@@ -21,11 +21,16 @@ export default function LoginPage() {
   const redirectPath = searchParams.get("redirect") || "/dashboard";
 
   const {
+    user,
+    userProfile,
     signInWithGoogle,
+    signInWithGoogleRedirect,
     signInWithCustomUser,
   } = useAuth();
 
   const [loading, setLoading] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
+  const [popupBlocked, setPopupBlocked] = useState(false);
   const [authErrorMessage, setAuthErrorMessage] = useState<string | null>(null);
   const [customName, setCustomName] = useState("");
   const [customHandle, setCustomHandle] = useState("");
@@ -33,6 +38,17 @@ export default function LoginPage() {
   const [showCustomForm, setShowCustomForm] = useState(false);
 
   const queryHandle = searchParams.get("handle");
+
+  // Auto-route if already logged in or returning from Google redirect
+  useEffect(() => {
+    if (user) {
+      if (!userProfile || !userProfile.username) {
+        router.push("/onboarding");
+      } else {
+        router.push(redirectPath);
+      }
+    }
+  }, [user, userProfile, router, redirectPath]);
 
   useEffect(() => {
     if (queryHandle) {
@@ -46,22 +62,51 @@ export default function LoginPage() {
   const handleGoogleLogin = async () => {
     setLoading(true);
     setAuthErrorMessage(null);
+    setPopupBlocked(false);
     try {
       const result = await signInWithGoogle();
+      if (result.redirecting) {
+        setRedirecting(true);
+        return;
+      }
       if (result.success && result.user) {
         if (!result.profile || !result.profile.username) {
           router.push("/onboarding");
         } else {
           router.push(redirectPath);
         }
+      } else if (result.popupBlocked) {
+        setPopupBlocked(true);
       } else if (result.error && result.error !== "Popup closed") {
-        setAuthErrorMessage(result.error);
+        if (result.error.toLowerCase().includes("popup")) {
+          setPopupBlocked(true);
+        } else {
+          setAuthErrorMessage(result.error);
+        }
       }
     } catch (err: any) {
       console.error("Sign in failed:", err);
-      setAuthErrorMessage(err?.message || "Google sign-in failed. Please try again.");
+      if (err?.code === "auth/popup-blocked" || err?.message?.toLowerCase().includes("popup")) {
+        setPopupBlocked(true);
+      } else {
+        setAuthErrorMessage(err?.message || "Google sign-in failed. Please try again.");
+      }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogleRedirectLogin = async () => {
+    setLoading(true);
+    setRedirecting(true);
+    setAuthErrorMessage(null);
+    try {
+      await signInWithGoogleRedirect();
+    } catch (err: any) {
+      console.error("Redirect sign-in failed:", err);
+      setRedirecting(false);
+      setLoading(false);
+      setAuthErrorMessage(err?.message || "Failed to redirect to Google. Please check your internet connection.");
     }
   };
 
@@ -135,8 +180,33 @@ export default function LoginPage() {
             </p>
           </div>
 
+          {/* Popup Blocked Guidance Banner */}
+          {popupBlocked && (
+            <div className="mb-4 p-4 rounded-2xl bg-amber-50/90 border border-amber-200/90 text-left space-y-2.5 animate-in fade-in duration-200">
+              <div className="flex items-center gap-2 text-amber-900 font-semibold text-xs">
+                <span className="text-sm">🛡️</span>
+                <span>Browser Popup Blocked</span>
+              </div>
+              <p className="text-[12px] text-amber-800 leading-relaxed">
+                Your browser blocked the Google popup window. Tap below to continue securely using full-page redirect:
+              </p>
+              <button
+                type="button"
+                onClick={handleGoogleRedirectLogin}
+                disabled={loading || redirecting}
+                className="w-full py-2.5 px-4 rounded-xl bg-amber-600 hover:bg-amber-700 active:scale-[0.99] text-white font-semibold text-xs flex items-center justify-center gap-2 shadow-sm transition-all"
+              >
+                {redirecting ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-white" />
+                ) : (
+                  <>Continue with Full-Page Google Sign-In →</>
+                )}
+              </button>
+            </div>
+          )}
+
           {/* Auth Error Banner */}
-          {authErrorMessage && (
+          {authErrorMessage && !popupBlocked && (
             <div className="mb-4 p-3.5 rounded-2xl bg-red-50 border border-red-200 text-xs text-red-700 leading-relaxed flex items-start gap-2">
               <span className="font-bold flex-shrink-0">⚠️</span>
               <span>{authErrorMessage}</span>
@@ -144,14 +214,14 @@ export default function LoginPage() {
           )}
 
           {/* Primary Action 1: 1-Click Continue with Google */}
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             <button
               type="button"
               onClick={handleGoogleLogin}
-              disabled={loading}
+              disabled={loading || redirecting}
               className="w-full flex items-center justify-center gap-3 py-3.5 px-4 rounded-2xl bg-white hover:bg-[#F5F5F7] text-[#1D1D1F] font-semibold text-sm border-2 border-[#E5E5EA] hover:border-[#0071E3]/40 shadow-sm transition-all apple-btn disabled:opacity-50"
             >
-              {loading ? (
+              {loading || redirecting ? (
                 <Loader2 className="w-4 h-4 animate-spin text-[#0071E3]" />
               ) : (
                 <svg className="w-4 h-4" viewBox="0 0 24 24">
@@ -173,8 +243,26 @@ export default function LoginPage() {
                   />
                 </svg>
               )}
-              <span>{loading ? "Connecting to Google..." : "Continue with Google"}</span>
+              <span>
+                {redirecting
+                  ? "Redirecting to Google..."
+                  : loading
+                  ? "Connecting to Google..."
+                  : "Continue with Google"}
+              </span>
             </button>
+
+            {/* Direct fallback link for popup-sensitive browsers */}
+            <div className="text-center pt-0.5">
+              <button
+                type="button"
+                onClick={handleGoogleRedirectLogin}
+                disabled={loading || redirecting}
+                className="text-[11px] text-[#86868B] hover:text-[#0071E3] transition-colors"
+              >
+                Having trouble with popups? Tap to sign in with redirect →
+              </button>
+            </div>
           </div>
 
 

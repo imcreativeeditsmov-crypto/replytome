@@ -5,6 +5,8 @@ import {
   User as FirebaseUser,
   onAuthStateChanged,
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signOut as firebaseSignOut,
 } from "firebase/auth";
 import {
@@ -32,7 +34,15 @@ interface AuthContextType {
   isAdmin: boolean;
   isDemoMode: boolean;
   needsOnboarding: boolean;
-  signInWithGoogle: () => Promise<{ success: boolean; user: AuthUser | null; profile?: UserProfile | null; error?: string }>;
+  signInWithGoogle: (options?: { useRedirect?: boolean }) => Promise<{
+    success: boolean;
+    user: AuthUser | null;
+    profile?: UserProfile | null;
+    popupBlocked?: boolean;
+    redirecting?: boolean;
+    error?: string;
+  }>;
+  signInWithGoogleRedirect: () => Promise<void>;
   signInWithCustomUser: (params: {
     displayName: string;
     username: string;
@@ -101,6 +111,7 @@ const AuthContext = createContext<AuthContextType>({
   isDemoMode: false,
   needsOnboarding: false,
   signInWithGoogle: async () => ({ success: false, user: null }),
+  signInWithGoogleRedirect: async () => {},
   signInWithCustomUser: async () => ({
     success: true,
     user: DEFAULT_SHIVAI_USER,
@@ -145,10 +156,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(false);
   }, []);
 
-  // Listen to Firebase auth state if configured
+  // Listen to Firebase auth state and redirect results
   useEffect(() => {
     const authInstance = getFirebaseAuth() || auth;
     if (isFirebaseConfigured && authInstance) {
+      // 1. Process redirect result if returning from Google OAuth redirect
+      getRedirectResult(authInstance)
+        .then(async (result) => {
+          if (result && result.user) {
+            const fbUser = result.user;
+            const authUser: AuthUser = {
+              uid: fbUser.uid,
+              email: fbUser.email,
+              displayName: fbUser.displayName,
+              photoURL: fbUser.photoURL,
+            };
+            setUser(authUser);
+            setIsDemoMode(false);
+
+            let profile: UserProfile | null = null;
+            try {
+              const res = await fetch(`/api/users?uid=${encodeURIComponent(fbUser.uid)}`);
+              const data = await res.json();
+              if (data.success && data.user) {
+                profile = data.user;
+              }
+            } catch {
+              profile = MockStore.getUser(fbUser.uid);
+            }
+
+            setUserProfile(profile);
+            persistSession(authUser, profile);
+          }
+        })
+        .catch((err) => {
+          console.error("Firebase getRedirectResult error:", err);
+        });
+
+      // 2. Active auth state listener
       const unsubscribe = onAuthStateChanged(authInstance, async (fbUser) => {
         if (fbUser) {
           const authUser: AuthUser = {
@@ -181,11 +226,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   /**
    * One-click Google Sign-in Handler via Firebase Auth
+   * Tries popup first; if browser blocks popups, falls back directly to signInWithRedirect.
    */
-  const signInWithGoogle = async (): Promise<{
+  const signInWithGoogle = async (options?: {
+    useRedirect?: boolean;
+  }): Promise<{
     success: boolean;
     user: AuthUser | null;
     profile?: UserProfile | null;
+    popupBlocked?: boolean;
+    redirecting?: boolean;
     error?: string;
   }> => {
     setLoading(true);
@@ -194,6 +244,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const provider = getGoogleProvider() || googleProvider;
 
     if (isFirebaseConfigured && authInstance && provider) {
+      if (options?.useRedirect) {
+        try {
+          await signInWithRedirect(authInstance, provider);
+          return { success: true, user: null, redirecting: true };
+        } catch (redirectErr: any) {
+          setLoading(false);
+          console.error("signInWithRedirect error:", redirectErr);
+          return {
+            success: false,
+            user: null,
+            error: redirectErr?.message || "Google redirect sign-in failed.",
+          };
+        }
+      }
+
       try {
         const result = await signInWithPopup(authInstance, provider);
         const fbUser = result.user;
@@ -225,11 +290,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setLoading(false);
         return { success: true, user: authUser, profile };
       } catch (err: any) {
-        setLoading(false);
         console.error("Firebase Google sign-in error:", err);
+
         if (err?.code === "auth/popup-closed-by-user" || err?.code === "auth/cancelled-popup-request") {
+          setLoading(false);
           return { success: false, user: null, error: "Popup closed" };
         }
+
+        // Automatic fallback if browser blocks popups
+        if (err?.code === "auth/popup-blocked") {
+          console.warn("Popup blocked by browser. Attempting full-page redirect to Google...");
+          try {
+            await signInWithRedirect(authInstance, provider);
+            return { success: true, user: null, redirecting: true };
+          } catch (redirectErr: any) {
+            console.error("Redirect fallback error:", redirectErr);
+            setLoading(false);
+            return {
+              success: false,
+              user: null,
+              popupBlocked: true,
+              error: "Popup blocked by your browser. Please tap the redirect button below.",
+            };
+          }
+        }
+
+        setLoading(false);
+
         if (err?.code === "auth/unauthorized-domain") {
           const currentDomain = typeof window !== "undefined" ? window.location.hostname : "replytome-three.vercel.app";
           const msg = `Domain (${currentDomain}) is not authorized in Firebase! Please add "${currentDomain}" to Firebase Console -> Authentication -> Settings -> Authorized Domains.`;
@@ -238,12 +325,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
           return { success: false, user: null, error: msg };
         }
+
         return { success: false, user: null, error: err?.message || "Google sign-in failed" };
       }
     }
 
     setLoading(false);
     return { success: false, user: null, error: "Firebase Authentication is not ready. Please try again." };
+  };
+
+  /**
+   * Direct Full-Page Redirect Sign-In
+   */
+  const signInWithGoogleRedirect = async (): Promise<void> => {
+    setLoading(true);
+    const authInstance = getFirebaseAuth() || auth;
+    const provider = getGoogleProvider() || googleProvider;
+
+    if (isFirebaseConfigured && authInstance && provider) {
+      await signInWithRedirect(authInstance, provider);
+    } else {
+      setLoading(false);
+      throw new Error("Firebase Authentication is not ready.");
+    }
   };
 
 
@@ -419,6 +523,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isDemoMode,
         needsOnboarding,
         signInWithGoogle,
+        signInWithGoogleRedirect,
         signInWithCustomUser,
         signInAsDemo,
         signOut,
