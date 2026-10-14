@@ -715,16 +715,50 @@ export default function DashboardPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#1D1D1F] mb-1">
-                  Profile Photo URL
+                <label className="block text-xs font-semibold text-[#1D1D1F] mb-1.5">
+                  Profile Photo
                 </label>
-                <input
-                  type="text"
-                  value={editPhoto}
-                  onChange={(e) => setEditPhoto(e.target.value)}
-                  placeholder="https://..."
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-[#F5F5F7] border border-[#E5E5EA] text-xs text-[#1D1D1F] focus:bg-white focus:border-[#0071E3] outline-none"
-                />
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-full overflow-hidden bg-[#F5F5F7] border border-[#E5E5EA] flex-shrink-0 relative shadow-inner">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={editPhoto || "/avatar.png"}
+                      alt="Avatar"
+                      referrerPolicy="no-referrer"
+                      crossOrigin="anonymous"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = "/avatar.png";
+                      }}
+                    />
+                  </div>
+                  <div className="flex-1 space-y-1.5">
+                    <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#F5F5F7] hover:bg-[#EBEBED] text-xs font-semibold text-[#1D1D1F] cursor-pointer border border-[#E5E5EA] transition-all apple-btn">
+                      <Camera className="w-3.5 h-3.5 text-[#0071E3]" />
+                      <span>Upload Photo</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = () => setEditPhoto(reader.result as string);
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                        className="hidden"
+                      />
+                    </label>
+                    <input
+                      type="text"
+                      value={editPhoto}
+                      onChange={(e) => setEditPhoto(e.target.value)}
+                      placeholder="Or paste photo URL..."
+                      className="w-full px-3 py-1.5 rounded-xl bg-[#F5F5F7] border border-[#E5E5EA] text-[11px] text-[#1D1D1F] focus:bg-white focus:border-[#0071E3] outline-none"
+                    />
+                  </div>
+                </div>
               </div>
 
               {profileError && (
