@@ -7,7 +7,13 @@ import {
   signInWithPopup,
   signOut as firebaseSignOut,
 } from "firebase/auth";
-import { auth, googleProvider, isFirebaseConfigured } from "@/lib/firebase/config";
+import {
+  auth,
+  googleProvider,
+  isFirebaseConfigured,
+  getFirebaseAuth,
+  getGoogleProvider,
+} from "@/lib/firebase/config";
 import { MockStore, INITIAL_DEMO_USER } from "@/lib/firebase/mockData";
 import { UserProfile } from "@/types";
 
@@ -25,7 +31,7 @@ interface AuthContextType {
   isAdmin: boolean;
   isDemoMode: boolean;
   needsOnboarding: boolean;
-  signInWithGoogle: () => Promise<{ success: boolean; user: AuthUser; profile?: UserProfile | null }>;
+  signInWithGoogle: () => Promise<{ success: boolean; user: AuthUser | null; profile?: UserProfile | null; error?: string }>;
   signInWithCustomUser: (params: {
     displayName: string;
     username: string;
@@ -39,8 +45,8 @@ interface AuthContextType {
   updateProfileState: (profile: UserProfile) => void;
 }
 
-const AUTH_USER_KEY = "replyto_auth_user_v6";
-const AUTH_PROFILE_KEY = "replyto_auth_profile_v6";
+const AUTH_USER_KEY = "replyto_auth_user_v7";
+const AUTH_PROFILE_KEY = "replyto_auth_profile_v7";
 
 export const DEFAULT_SHIVAI_USER: AuthUser = {
   uid: "shivai-creator-uid",
@@ -50,7 +56,7 @@ export const DEFAULT_SHIVAI_USER: AuthUser = {
 };
 
 function getInitialUser(): AuthUser | null {
-  if (typeof window === "undefined") return DEFAULT_SHIVAI_USER;
+  if (typeof window === "undefined") return null;
   try {
     const raw = localStorage.getItem(AUTH_USER_KEY);
     if (raw) {
@@ -62,12 +68,11 @@ function getInitialUser(): AuthUser | null {
   } catch (e) {
     console.error("Failed to parse cached user:", e);
   }
-  // Default to Shivai for smooth instant experience
-  return DEFAULT_SHIVAI_USER;
+  return null;
 }
 
 function getInitialProfile(): UserProfile | null {
-  if (typeof window === "undefined") return INITIAL_DEMO_USER;
+  if (typeof window === "undefined") return null;
   try {
     const raw = localStorage.getItem(AUTH_PROFILE_KEY);
     if (raw) {
@@ -79,17 +84,17 @@ function getInitialProfile(): UserProfile | null {
   } catch (e) {
     console.error("Failed to parse cached profile:", e);
   }
-  return INITIAL_DEMO_USER;
+  return null;
 }
 
 const AuthContext = createContext<AuthContextType>({
-  user: DEFAULT_SHIVAI_USER,
-  userProfile: INITIAL_DEMO_USER,
+  user: null,
+  userProfile: null,
   loading: false,
-  isAdmin: true,
-  isDemoMode: true,
+  isAdmin: false,
+  isDemoMode: false,
   needsOnboarding: false,
-  signInWithGoogle: async () => ({ success: true, user: DEFAULT_SHIVAI_USER, profile: INITIAL_DEMO_USER }),
+  signInWithGoogle: async () => ({ success: false, user: null }),
   signInWithCustomUser: async () => ({
     success: true,
     user: DEFAULT_SHIVAI_USER,
@@ -109,7 +114,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<AuthUser | null>(getInitialUser);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(getInitialProfile);
   const [loading, setLoading] = useState(false);
-  const [isDemoMode, setIsDemoMode] = useState(!isFirebaseConfigured);
+  const [isDemoMode, setIsDemoMode] = useState(false);
 
   // Sync cache helpers
   const persistSession = (authUser: AuthUser | null, profile: UserProfile | null) => {
@@ -131,14 +136,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const currentProfile = getInitialProfile();
     setUser(currentUser);
     setUserProfile(currentProfile);
-    persistSession(currentUser, currentProfile);
     setLoading(false);
   }, []);
 
   // Listen to Firebase auth state if configured
   useEffect(() => {
-    if (isFirebaseConfigured && auth) {
-      const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+    const authInstance = getFirebaseAuth() || auth;
+    if (isFirebaseConfigured && authInstance) {
+      const unsubscribe = onAuthStateChanged(authInstance, async (fbUser) => {
         if (fbUser) {
           const authUser: AuthUser = {
             uid: fbUser.uid,
@@ -169,18 +174,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   /**
-   * Google Sign-in Handler with graceful fallback
+   * One-click Google Sign-in Handler via Firebase Auth
    */
   const signInWithGoogle = async (): Promise<{
     success: boolean;
-    user: AuthUser;
+    user: AuthUser | null;
     profile?: UserProfile | null;
+    error?: string;
   }> => {
     setLoading(true);
 
-    if (isFirebaseConfigured && auth && googleProvider) {
+    const authInstance = getFirebaseAuth() || auth;
+    const provider = getGoogleProvider() || googleProvider;
+
+    if (isFirebaseConfigured && authInstance && provider) {
       try {
-        const result = await signInWithPopup(auth, googleProvider);
+        const result = await signInWithPopup(authInstance, provider);
         const fbUser = result.user;
         const authUser: AuthUser = {
           uid: fbUser.uid,
@@ -209,12 +218,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         setLoading(false);
         return { success: true, user: authUser, profile };
-      } catch (err: unknown) {
-        console.warn("Firebase Google popup error, falling back to seamless login:", err);
+      } catch (err: any) {
+        setLoading(false);
+        console.error("Firebase Google sign-in error:", err);
+        if (err?.code === "auth/popup-closed-by-user") {
+          return { success: false, user: null, error: "Popup closed" };
+        }
+        return { success: false, user: null, error: err?.message || "Google sign-in failed" };
       }
     }
 
-    // Seamless Google sign-in fallback: creates a new creator needing onboarding
+    // Fallback if Firebase credentials are completely absent
     const newUid = `user_google_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
     const fallbackAuthUser: AuthUser = {
       uid: newUid,
@@ -228,6 +242,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(false);
     return { success: true, user: fallbackAuthUser, profile: null };
   };
+
 
   /**
    * Sign in with customizable profile (name, username, photo, instagramUrl)
@@ -371,11 +386,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const isAdmin = Boolean(
-    userProfile?.isAdmin ||
-      userProfile?.role === "admin" ||
-      userProfile?.username?.toLowerCase() === "aibyshivai" ||
-      user?.email?.toLowerCase().includes("aibyshivai")
+    user &&
+      (userProfile?.isAdmin ||
+        userProfile?.role === "admin" ||
+        userProfile?.username?.toLowerCase() === "aibyshivai" ||
+        user?.email?.toLowerCase().includes("aibyshivai"))
   );
+
 
   const needsOnboarding = Boolean(user && (!userProfile || !userProfile.username));
 

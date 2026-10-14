@@ -12,12 +12,36 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
+
 export const isFirebaseConfigured = Boolean(
   process.env.NEXT_PUBLIC_FIREBASE_API_KEY &&
     process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID &&
     process.env.NEXT_PUBLIC_FIREBASE_API_KEY !== "your-api-key"
 );
 
+export function getFirebaseApp(): FirebaseApp | null {
+  if (typeof window === "undefined" || !isFirebaseConfigured) return null;
+  try {
+    return getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+  } catch (error) {
+    console.warn("Failed to initialize Firebase app:", error);
+    return null;
+  }
+}
+
+export function getFirebaseAuth(): Auth | null {
+  const app = getFirebaseApp();
+  if (!app) return null;
+  return getAuth(app);
+}
+
+export function getGoogleProvider(): GoogleAuthProvider {
+  const provider = new GoogleAuthProvider();
+  provider.setCustomParameters({ prompt: "select_account" });
+  return provider;
+}
+
+// Initialized instances for convenience
 let app: FirebaseApp | undefined;
 let auth: Auth | undefined;
 let db: Firestore | undefined;
@@ -38,3 +62,4 @@ if (typeof window !== "undefined" && isFirebaseConfigured) {
 }
 
 export { app, auth, db, storage, googleProvider };
+

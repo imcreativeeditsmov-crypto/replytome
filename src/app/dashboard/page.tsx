@@ -83,7 +83,7 @@ export default function DashboardPage() {
         .then((data) => {
           if (data.success && Array.isArray(data.posts)) {
             setPosts(data.posts);
-            MockStore.setPosts(data.posts);
+            MockStore.setPosts(data.posts, user.uid);
           } else {
             const fetched = MockStore.getPosts(user.uid);
             setPosts(fetched);
@@ -145,23 +145,24 @@ export default function DashboardPage() {
   };
 
   const handleDeletePost = async () => {
-    if (!deleteModalPost) return;
+    if (!deleteModalPost || !user?.uid) return;
     try {
       const remaining = posts.filter((p) => p.id !== deleteModalPost.id);
       await PostService.deletePost(deleteModalPost.id);
       setPosts(remaining);
-      MockStore.setPosts(remaining);
-      // Explicitly sync remaining array to server storage
+      MockStore.setPosts(remaining, user.uid);
+      // Explicitly sync remaining array to server storage scoped to user.uid
       await fetch("/api/posts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ posts: remaining }),
+        body: JSON.stringify({ posts: remaining, uid: user.uid }),
       }).catch(console.error);
       setDeleteModalPost(null);
     } catch (err) {
       console.error("Failed to delete post:", err);
     }
   };
+
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -93,7 +93,7 @@ export const ServerStorage = {
     return store.users || [store.user || INITIAL_DEMO_USER];
   },
 
-  getUser(usernameOrUid?: string): UserProfile {
+  getUser(usernameOrUid?: string): UserProfile | null {
     const store = ensureStoreFile();
     if (!usernameOrUid) return store.user || INITIAL_DEMO_USER;
 
@@ -111,7 +111,7 @@ export const ServerStorage = {
       return store.user;
     }
 
-    return store.user || INITIAL_DEMO_USER;
+    return null;
   },
 
   getUserByUsername(username: string): UserProfile | null {
@@ -180,7 +180,7 @@ export const ServerStorage = {
     const user = this.getUserByUsername(username);
     if (!user) return [];
     return store.posts
-      .filter((p) => (p.uid === user.uid || !p.uid) && p.status === "published")
+      .filter((p) => p.uid === user.uid && p.status === "published")
       .sort((a, b) => a.order - b.order);
   },
 
@@ -191,11 +191,12 @@ export const ServerStorage = {
     const post = store.posts.find(
       (p) =>
         p.slug.toLowerCase() === slug.toLowerCase() &&
-        (p.uid === user.uid || !p.uid || user.username.toLowerCase() === "aibyshivai")
+        p.uid === user.uid
     );
     if (!post) return null;
     return { user, post };
   },
+
 
   getPostById(postId: string): Post | null {
     const store = ensureStoreFile();

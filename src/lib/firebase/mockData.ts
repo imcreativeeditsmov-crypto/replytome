@@ -120,16 +120,17 @@ function saveStoredPosts(posts: Post[]) {
 }
 
 export const MockStore = {
-  getUser(uidOrUsername?: string): UserProfile {
-    if (!uidOrUsername) return getStoredUser();
+  getUser(uidOrUsername?: string): UserProfile | null {
+    if (!uidOrUsername) return null;
     const users = getStoredUsers();
     const found = users.find(
       (u) =>
         u.uid === uidOrUsername ||
         u.username.toLowerCase() === uidOrUsername.toLowerCase()
     );
-    return found || getStoredUser();
+    return found || null;
   },
+
 
   getAllUsers(): UserProfile[] {
     return getStoredUsers();
@@ -225,9 +226,17 @@ export const MockStore = {
     return newPost;
   },
 
-  setPosts(posts: Post[]): void {
-    saveStoredPosts(posts);
+  setPosts(posts: Post[], uid?: string): void {
+    if (!uid) {
+      saveStoredPosts(posts);
+      return;
+    }
+    const all = getStoredPosts();
+    const other = all.filter((p) => p.uid !== uid);
+    const updated = [...other, ...posts.map((p) => ({ ...p, uid }))];
+    saveStoredPosts(updated);
   },
+
 
   deletePost(postId: string): boolean {
     const posts = getStoredPosts();

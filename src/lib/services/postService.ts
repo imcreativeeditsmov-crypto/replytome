@@ -30,8 +30,8 @@ export const PostService = {
    */
   async getUserProfile(uid: string): Promise<UserProfile | null> {
     if (!this.isConfigured()) {
-      const user = MockStore.getUser();
-      return user.uid === uid ? user : null;
+      const user = MockStore.getUser(uid);
+      return user && user.uid === uid ? user : null;
     }
 
     try {
@@ -43,9 +43,10 @@ export const PostService = {
       return null;
     } catch (error) {
       console.error("Error fetching user profile:", error);
-      return MockStore.getUser();
+      return MockStore.getUser(uid);
     }
   },
+
 
   /**
    * Fetch a user profile by username

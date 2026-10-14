@@ -25,8 +25,12 @@ export async function GET(req: NextRequest) {
 
     if (uid) {
       const user = ServerStorage.getUser(uid);
+      if (!user) {
+        return NextResponse.json({ success: false, error: "User not found" }, { status: 404 });
+      }
       return NextResponse.json({ success: true, user });
     }
+
 
     // 3. Return all users (public overview)
     const users = ServerStorage.getAllUsers();
