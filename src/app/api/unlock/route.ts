@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
       const clean = String(commenterHandle).trim().replace(/^@/, "");
       if (!clean || clean.length < 2) {
         return NextResponse.json(
-          { success: false, error: "Kripya apna Instagram username (@handle) enter karein" },
+          { success: false, error: "Please enter your Instagram username (@handle)" },
           { status: 400 }
         );
       }

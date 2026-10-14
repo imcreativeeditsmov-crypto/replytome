@@ -53,7 +53,7 @@ export class InstagramGraphAPIVerifier implements InstagramCommentVerifier {
           if (!match) {
             return {
               verified: false,
-              error: `Reel comments me "${targetKeyword}" nahi mila. Kripya pehle Reel par "${targetKeyword}" comment karein.`,
+              error: `Could not find "${targetKeyword}" in the Reel comments. Please post your comment "${targetKeyword}" on the Reel first.`,
             };
           }
           return { verified: true };
@@ -69,7 +69,7 @@ export class InstagramGraphAPIVerifier implements InstagramCommentVerifier {
       if (!clean || clean.length < 2) {
         return {
           verified: false,
-          error: "Apna sahi Instagram username (@handle) enter karein",
+          error: "Please enter a valid Instagram username (@handle)",
         };
       }
     }

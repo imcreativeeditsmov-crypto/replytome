@@ -93,7 +93,7 @@ export const CommentGateCard: React.FC<CommentGateCardProps> = ({
     // 1. Check that Instagram handle is provided
     const cleanHandle = instagramHandle.trim().replace(/^@/, "");
     if (!cleanHandle || cleanHandle.length < 2) {
-      setError("Kripya apna Instagram username (@handle) enter karein jisse aapne comment kiya hai.");
+      setError("Please enter the Instagram username (@handle) you used to comment.");
       return;
     }
 
@@ -228,7 +228,7 @@ export const CommentGateCard: React.FC<CommentGateCardProps> = ({
 
         <p className="text-xs sm:text-sm text-[#6E6E73] max-w-sm mt-1.5 leading-relaxed">
           {message ||
-            `Reel par comment karne ke baad apna username verify karein taaki prompt aur full resources unlock ho sakein.`}
+            `Comment on the Reel and verify your Instagram handle to unlock the full prompt and resources.`}
         </p>
       </div>
 
@@ -257,7 +257,7 @@ export const CommentGateCard: React.FC<CommentGateCardProps> = ({
                 Comment &quot;{cleanKeyword}&quot; on Reel
               </p>
               <p className="text-[11px] text-[#6E6E73] truncate">
-                Reel open karke comment box me &quot;<span className="font-bold text-[#0071E3]">{cleanKeyword}</span>&quot; likhein
+                Open the Reel and post a comment with &quot;<span className="font-bold text-[#0071E3]">{cleanKeyword}</span>&quot;
               </p>
             </div>
           </div>
@@ -291,7 +291,7 @@ export const CommentGateCard: React.FC<CommentGateCardProps> = ({
                 Verify Your Instagram Comment
               </p>
               <p className="text-[11px] text-[#6E6E73]">
-                Jis account se comment kiya hai uska username enter karein:
+                Enter the Instagram handle you commented from:
               </p>
             </div>
             <Sparkles className="w-4 h-4 mr-1 text-[#0071E3]" />
@@ -328,7 +328,7 @@ export const CommentGateCard: React.FC<CommentGateCardProps> = ({
               />
             </div>
             <p className="text-[10px] text-[#86868B]">
-              Comment check hone ke baad turant prompt unlock ho jayega.
+              Content unlocks immediately once your comment is verified.
             </p>
           </div>
         </div>
@@ -367,7 +367,7 @@ export const CommentGateCard: React.FC<CommentGateCardProps> = ({
             </span>
           </div>
           <p className="text-[11px] text-[#6E6E73]">
-            Comment post karne ke baad neeche apna handle daal kar verify karein.
+            After posting your comment on Instagram, enter your handle below to verify.
           </p>
         </div>
       )}
