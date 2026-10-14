@@ -1,0 +1,336 @@
+"use client";
+
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
+import { PostService } from "@/lib/services/postService";
+import { validateUsername, slugify } from "@/lib/utils";
+import {
+  Check,
+  X,
+  Loader2,
+  Copy,
+  Sparkles,
+  ArrowRight,
+  Camera,
+  AtSign,
+} from "lucide-react";
+import { motion } from "framer-motion";
+
+export default function OnboardingPage() {
+  const router = useRouter();
+  const { user, userProfile, updateProfileState, loading: authLoading } = useAuth();
+
+  const [displayName, setDisplayName] = useState("");
+  const [username, setUsername] = useState("");
+  const [bio, setBio] = useState("");
+  const [photoURL, setPhotoURL] = useState("");
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  // Availability check states
+  const [checkingUsername, setCheckingUsername] = useState(false);
+  const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
+  const [usernameError, setUsernameError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+
+  // Initialize from authenticated user or existing profile
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.push("/");
+      return;
+    }
+
+    if (user) {
+      if (userProfile?.username) {
+        // Already onboarded
+        router.push("/dashboard");
+        return;
+      }
+
+      setDisplayName(user.displayName || "");
+      const suggestedUsername = slugify(user.displayName || "creator").replace(/-/g, "_");
+      setUsername(suggestedUsername);
+      setPhotoURL(user.photoURL || "");
+    }
+  }, [user, userProfile, authLoading, router]);
+
+  // Debounced live username availability check
+  useEffect(() => {
+    if (!username) {
+      setUsernameAvailable(null);
+      setUsernameError(null);
+      return;
+    }
+
+    const validation = validateUsername(username);
+    if (!validation.isValid) {
+      setUsernameAvailable(false);
+      setUsernameError(validation.error || "Invalid username");
+      return;
+    }
+
+    setUsernameError(null);
+    setCheckingUsername(true);
+
+    const timer = setTimeout(async () => {
+      try {
+        const available = await PostService.isUsernameAvailable(username, user?.uid);
+        setUsernameAvailable(available);
+        if (!available) {
+          setUsernameError(`@${username} is already taken`);
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+        setCheckingUsername(false);
+      }
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [username, user?.uid]);
+
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://replyto.me";
+  const previewUrl = `${origin}/${username || "yourname"}`;
+
+  const handleCopyPreviewLink = async () => {
+    try {
+      await navigator.clipboard.writeText(previewUrl);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && user) {
+      try {
+        const url = await PostService.uploadImage(file, user.uid);
+        setPhotoURL(url);
+      } catch (err) {
+        console.error("Failed to upload image:", err);
+      }
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user) return;
+
+    const validation = validateUsername(username);
+    if (!validation.isValid) {
+      setUsernameError(validation.error || "Invalid username");
+      return;
+    }
+
+    if (!usernameAvailable) {
+      setUsernameError("Please choose an available username");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const profile = await PostService.saveUserProfile({
+        uid: user.uid,
+        displayName: displayName.trim() || "Creator",
+        username: username.toLowerCase().trim(),
+        bio: bio.trim(),
+        photoURL:
+          photoURL ||
+          `https://api.dicebear.com/7.x/identicon/svg?seed=${username}`,
+        createdAt: new Date().toISOString(),
+      });
+
+      updateProfileState(profile);
+      router.push("/dashboard");
+    } catch (error) {
+      console.error("Error creating profile:", error);
+      alert("Failed to save profile. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#FFFFFF]">
+        <Loader2 className="w-6 h-6 animate-spin text-[#0071E3]" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-[#F5F5F7] flex flex-col justify-center items-center py-12 px-4 sm:px-6">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.3 }}
+        className="w-full max-w-lg bg-white rounded-[32px] p-6 sm:p-10 border border-[#E5E5EA] shadow-xl"
+      >
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="w-12 h-12 rounded-2xl bg-[#0071E3] text-white font-bold text-xl flex items-center justify-center mx-auto mb-3 shadow-md">
+            R
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#1D1D1F] tracking-tight">
+            Claim your link in bio
+          </h1>
+          <p className="text-sm text-[#6E6E73] mt-1.5">
+            Set up your public Replyto.me profile in seconds.
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Avatar Upload */}
+          <div className="flex flex-col items-center">
+            <div className="relative group cursor-pointer">
+              <div className="w-24 h-24 rounded-full overflow-hidden bg-[#F5F5F7] border-2 border-[#E5E5EA] shadow-inner flex items-center justify-center">
+                {photoURL ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={photoURL}
+                    alt="Avatar preview"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <AtSign className="w-8 h-8 text-[#86868B]" />
+                )}
+              </div>
+              <label className="absolute inset-0 rounded-full bg-black/40 text-white flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                <Camera className="w-5 h-5 mb-0.5" />
+                <span className="text-[10px] font-medium">Change</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+              </label>
+            </div>
+            <p className="text-xs text-[#86868B] mt-2">Tap photo to upload custom avatar</p>
+          </div>
+
+          {/* Display Name */}
+          <div>
+            <label className="block text-xs font-semibold text-[#1D1D1F] mb-1.5">
+              Display Name
+            </label>
+            <input
+              type="text"
+              required
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder="e.g. AI by Shivai"
+              className="w-full px-4 py-3 rounded-2xl bg-[#F5F5F7] border border-[#E5E5EA] text-sm text-[#1D1D1F] placeholder-[#86868B] focus:bg-white focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20 outline-none transition-all"
+            />
+          </div>
+
+          {/* Username (Handle) */}
+          <div>
+            <label className="block text-xs font-semibold text-[#1D1D1F] mb-1.5">
+              Username (URL slug)
+            </label>
+            <div className="relative">
+              <div className="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-[#86868B] font-mono">
+                @
+              </div>
+              <input
+                type="text"
+                required
+                value={username}
+                onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/\s+/g, ""))}
+                placeholder="yourhandle"
+                className="w-full pl-8 pr-10 py-3 rounded-2xl bg-[#F5F5F7] border border-[#E5E5EA] text-sm text-[#1D1D1F] placeholder-[#86868B] font-mono focus:bg-white focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20 outline-none transition-all"
+              />
+              <div className="absolute right-3.5 top-1/2 -translate-y-1/2">
+                {checkingUsername ? (
+                  <Loader2 className="w-4 h-4 text-[#86868B] animate-spin" />
+                ) : usernameAvailable === true ? (
+                  <div className="w-5 h-5 rounded-full bg-[#34C759] text-white flex items-center justify-center">
+                    <Check className="w-3.5 h-3.5 stroke-[3]" />
+                  </div>
+                ) : usernameAvailable === false ? (
+                  <div className="w-5 h-5 rounded-full bg-[#FF3B30] text-white flex items-center justify-center">
+                    <X className="w-3.5 h-3.5 stroke-[3]" />
+                  </div>
+                ) : null}
+              </div>
+            </div>
+
+            {usernameError ? (
+              <p className="text-xs text-[#FF3B30] mt-1.5 pl-1">{usernameError}</p>
+            ) : usernameAvailable ? (
+              <p className="text-xs text-[#34C759] mt-1.5 pl-1 font-medium">
+                Awesome! @{username} is available.
+              </p>
+            ) : (
+              <p className="text-[11px] text-[#86868B] mt-1.5 pl-1">
+                Letters, numbers, underscores and dots. 3–30 chars.
+              </p>
+            )}
+          </div>
+
+          {/* Live URL Preview */}
+          <div className="p-3 rounded-2xl bg-[#F5F5F7] border border-[#E5E5EA] flex items-center justify-between">
+            <div className="min-w-0 flex-1 pr-2">
+              <span className="text-[10px] font-semibold text-[#86868B] uppercase tracking-wider block">
+                Your Link in Bio
+              </span>
+              <p className="text-xs font-mono text-[#0071E3] font-semibold truncate mt-0.5">
+                {previewUrl}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={handleCopyPreviewLink}
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-white text-[#1D1D1F] border border-[#E5E5EA] text-xs font-medium hover:bg-zinc-100 transition-all apple-btn"
+            >
+              {copiedLink ? <Check className="w-3.5 h-3.5 text-[#34C759]" /> : <Copy className="w-3.5 h-3.5" />}
+              <span>{copiedLink ? "Copied" : "Copy"}</span>
+            </button>
+          </div>
+
+          {/* Bio */}
+          <div>
+            <div className="flex justify-between items-center mb-1.5">
+              <label className="text-xs font-semibold text-[#1D1D1F]">
+                Bio (Optional)
+              </label>
+              <span className="text-[11px] text-[#86868B]">
+                {bio.length}/150
+              </span>
+            </div>
+            <textarea
+              rows={3}
+              maxLength={150}
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              placeholder="Tell your audience what you create..."
+              className="w-full px-4 py-3 rounded-2xl bg-[#F5F5F7] border border-[#E5E5EA] text-sm text-[#1D1D1F] placeholder-[#86868B] focus:bg-white focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20 outline-none transition-all resize-none"
+            />
+          </div>
+
+          {/* Submit */}
+          <button
+            type="submit"
+            disabled={submitting || !usernameAvailable || checkingUsername}
+            className="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-2xl bg-[#0071E3] hover:bg-[#0077ED] text-white font-semibold text-sm shadow-[0_4px_14px_rgba(0,113,227,0.3)] transition-all apple-btn disabled:opacity-50"
+          >
+            {submitting ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Creating your profile...</span>
+              </>
+            ) : (
+              <>
+                <span>Complete Setup & Go to Dashboard</span>
+                <ArrowRight className="w-4 h-4" />
+              </>
+            )}
+          </button>
+        </form>
+      </motion.div>
+    </div>
+  );
+}
