@@ -39,6 +39,17 @@ export default function LoginPage() {
   const [customInstagram, setCustomInstagram] = useState("");
   const [showCustomForm, setShowCustomForm] = useState(false);
 
+  const queryHandle = searchParams.get("handle");
+
+  useEffect(() => {
+    if (queryHandle) {
+      const clean = queryHandle.toLowerCase().replace(/[^a-z0-9._]/g, "");
+      setCustomHandle(clean);
+      setCustomInstagram(`https://instagram.com/${clean}`);
+      setShowCustomForm(true);
+    }
+  }, [queryHandle]);
+
   const handleEnterDashboard = () => {
     router.push(redirectPath);
   };

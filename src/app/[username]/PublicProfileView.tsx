@@ -19,6 +19,7 @@ import { motion } from "framer-motion";
 
 import { MockStore } from "@/lib/firebase/mockData";
 import { PostService } from "@/lib/services/postService";
+import { BeACreatorCTA } from "@/components/BeACreatorCTA";
 
 interface PublicProfileViewProps {
   user: UserProfile;
@@ -210,6 +211,11 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({
               );
             })
           )}
+        </div>
+
+        {/* Be a Creator CTA */}
+        <div className="mt-8">
+          <BeACreatorCTA source="profile_view" />
         </div>
       </main>
 

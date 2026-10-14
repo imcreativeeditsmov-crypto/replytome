@@ -10,6 +10,7 @@ import { ShareModal } from "@/components/ShareModal";
 import { InstagramIcon } from "@/components/icons/InstagramIcon";
 import { MockStore } from "@/lib/firebase/mockData";
 import { PublicPost } from "@/types";
+import { BeACreatorCTA } from "@/components/BeACreatorCTA";
 import {
   Lock,
   ChevronRight,
@@ -265,6 +266,11 @@ export default function HomePage() {
               + New Post
             </Link>
           </div>
+        </div>
+
+        {/* Be a Creator CTA */}
+        <div className="mt-6">
+          <BeACreatorCTA source="home_page" />
         </div>
       </main>
 
