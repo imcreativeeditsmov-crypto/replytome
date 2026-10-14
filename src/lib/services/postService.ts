@@ -136,7 +136,12 @@ export const PostService = {
         batch.delete(oldUsernameRef);
       }
 
-      await batch.commit();
+      // 2.5s timeout on Firestore write so connectivity never hangs the user
+      const commitTask = batch.commit();
+      const timeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Firestore write timed out")), 2500)
+      );
+      await Promise.race([commitTask, timeout]);
       return profile;
     } catch (error) {
       console.error("Error saving user profile:", error);
@@ -414,20 +419,22 @@ export const PostService = {
         const fileExt = file.name.split(".").pop() || "jpg";
         const filename = `images/${uid}/${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${fileExt}`;
         const storageRef = ref(storage, filename);
-        await uploadBytes(storageRef, file);
+        
+        // Timeout after 2.5s if storage bucket is not responding
+        const uploadTask = uploadBytes(storageRef, file);
+        const timeout = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error("Storage upload timed out")), 2500)
+        );
+        await Promise.race([uploadTask, timeout]);
         return await getDownloadURL(storageRef);
       } catch (error) {
-        console.warn("Storage upload failed, falling back to data URL:", error);
+        console.warn("Storage upload failed or timed out, falling back to compressed data URL:", error);
       }
     }
 
-    // Fallback: convert file to Base64 data URL
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = (err) => reject(err);
-      reader.readAsDataURL(file);
-    });
+    // Fallback: convert file to compressed data URL
+    const { compressAvatar } = await import("@/lib/utils");
+    return compressAvatar(file, 256, 0.82);
   },
 
   /**

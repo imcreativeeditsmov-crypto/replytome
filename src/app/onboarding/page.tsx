@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { PostService } from "@/lib/services/postService";
-import { validateUsername, slugify } from "@/lib/utils";
+import { validateUsername, slugify, compressAvatar } from "@/lib/utils";
 import {
   Check,
   X,
@@ -119,34 +119,33 @@ export default function OnboardingPage() {
     }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setImageError(false);
+    setUploadingImage(true);
 
-    // 1. Instant local preview via FileReader (instant 0ms display for user)
-    const reader = new FileReader();
-    reader.onload = async () => {
-      const dataUrl = reader.result as string;
-      setPhotoURL(dataUrl);
+    try {
+      // 1. Instant client-side compression to lightweight 256x256 JPEG (~20KB)
+      const compressed = await compressAvatar(file, 256, 0.82);
+      setPhotoURL(compressed);
+      setUploadingImage(false);
 
-      // 2. Background cloud upload
+      // 2. Non-blocking background attempt to upload to storage
       if (user?.uid) {
-        try {
-          setUploadingImage(true);
-          const cloudUrl = await PostService.uploadImage(file, user.uid);
-          if (cloudUrl) {
-            setPhotoURL(cloudUrl);
-          }
-        } catch (err) {
-          console.warn("Storage upload failed, keeping local preview:", err);
-        } finally {
-          setUploadingImage(false);
-        }
+        PostService.uploadImage(file, user.uid)
+          .then((cloudUrl) => {
+            if (cloudUrl) setPhotoURL(cloudUrl);
+          })
+          .catch((err) => {
+            console.warn("Background upload skipped, keeping compressed avatar:", err);
+          });
       }
-    };
-    reader.readAsDataURL(file);
+    } catch (err) {
+      console.error("Failed to process image:", err);
+      setUploadingImage(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -175,37 +174,49 @@ export default function OnboardingPage() {
         finalIg = `https://instagram.com/${username.toLowerCase().trim()}`;
       }
 
+      const cleanUsername = username.toLowerCase().trim();
+
       const profile: UserProfile = {
         uid: user.uid,
         displayName: displayName.trim() || "Creator",
-        username: username.toLowerCase().trim(),
+        username: cleanUsername,
         bio: bio.trim(),
         instagramUrl: finalIg,
         email: user.email || undefined,
         photoURL:
           photoURL ||
-          `https://api.dicebear.com/7.x/identicon/svg?seed=${username}`,
+          `https://api.dicebear.com/7.x/identicon/svg?seed=${cleanUsername}`,
         createdAt: new Date().toISOString(),
       };
 
-      const saved = await PostService.saveUserProfile(profile);
+      // 1. Immediately update local state so user gets instant feedback
+      updateProfileState(profile);
 
-      // Persist to server API as well
+      // 2. Save profile in DB / MockStore
+      const saved = await PostService.saveUserProfile(profile);
+      updateProfileState(saved || profile);
+
+      // 3. Persist to server API with 2s timeout
       try {
-        await fetch("/api/users", {
+        const syncPromise = fetch("/api/users", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ user: saved }),
+          body: JSON.stringify({ user: saved || profile }),
         });
+        const timeoutPromise = new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("API timeout")), 2000)
+        );
+        await Promise.race([syncPromise, timeoutPromise]);
       } catch (e) {
         console.warn("Could not sync to /api/users:", e);
       }
 
-      updateProfileState(saved);
+      // 4. Navigate directly to dashboard!
       router.push("/dashboard");
     } catch (error) {
       console.error("Error creating profile:", error);
-      alert("Failed to save profile. Please try again.");
+      // Even if remote write had an issue, route user to dashboard
+      router.push("/dashboard");
     } finally {
       setSubmitting(false);
     }

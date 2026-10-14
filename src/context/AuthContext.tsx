@@ -136,15 +136,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Sync cache helpers
   const persistSession = (authUser: AuthUser | null, profile: UserProfile | null) => {
     if (typeof window === "undefined") return;
-    if (authUser) {
-      localStorage.setItem(AUTH_USER_KEY, JSON.stringify(authUser));
-    } else {
-      localStorage.removeItem(AUTH_USER_KEY);
-    }
-    if (profile) {
-      localStorage.setItem(AUTH_PROFILE_KEY, JSON.stringify(profile));
-    } else {
-      localStorage.removeItem(AUTH_PROFILE_KEY);
+    try {
+      if (authUser) {
+        localStorage.setItem(AUTH_USER_KEY, JSON.stringify(authUser));
+      } else {
+        localStorage.removeItem(AUTH_USER_KEY);
+      }
+      if (profile) {
+        localStorage.setItem(AUTH_PROFILE_KEY, JSON.stringify(profile));
+      } else {
+        localStorage.removeItem(AUTH_PROFILE_KEY);
+      }
+    } catch (e) {
+      console.warn("Storage quota exceeded or storage disabled, session kept in memory:", e);
     }
   };
 
