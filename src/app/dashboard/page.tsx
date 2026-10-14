@@ -293,7 +293,12 @@ export default function DashboardPage() {
                     "/avatar.png"
                   }
                   alt={userProfile?.displayName || "AI by Shivai"}
+                  referrerPolicy="no-referrer"
+                  crossOrigin="anonymous"
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = "/avatar.png";
+                  }}
                 />
               </div>
 

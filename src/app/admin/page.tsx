@@ -357,7 +357,12 @@ export default function AdminPage() {
                           <img
                             src={creator.photoURL || "/avatar.png"}
                             alt={creator.displayName}
+                            referrerPolicy="no-referrer"
+                            crossOrigin="anonymous"
                             className="w-9 h-9 rounded-full object-cover border border-[#E5E5EA] flex-shrink-0"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = "/avatar.png";
+                            }}
                           />
                           <div className="min-w-0">
                             <p className="font-bold text-[#1D1D1F] truncate">{creator.displayName}</p>

@@ -98,7 +98,12 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({
                   `https://api.dicebear.com/7.x/identicon/svg?seed=${user.username}`
                 }
                 alt={user.displayName}
+                referrerPolicy="no-referrer"
+                crossOrigin="anonymous"
                 className="w-full h-full object-cover rounded-full"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = `https://api.dicebear.com/7.x/identicon/svg?seed=${user.username}`;
+                }}
               />
             </div>
           </div>

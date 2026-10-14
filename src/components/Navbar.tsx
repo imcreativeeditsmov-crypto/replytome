@@ -29,7 +29,12 @@ export const Navbar: React.FC = () => {
             <img
               src={avatarUrl}
               alt={displayName}
+              referrerPolicy="no-referrer"
+              crossOrigin="anonymous"
               className="w-full h-full object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = "/avatar.png";
+              }}
             />
           </div>
           <div className="flex flex-col">

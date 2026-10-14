@@ -171,7 +171,12 @@ At 00:00, the restaurant interior is completely empty. The video must show the r
                   <img
                     src={userProfile?.photoURL || user.photoURL || "/avatar.png"}
                     alt="User"
+                    referrerPolicy="no-referrer"
+                    crossOrigin="anonymous"
                     className="w-4 h-4 rounded-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = "/avatar.png";
+                    }}
                   />
                   <span>Dashboard</span>
                   <ArrowRight className="w-3 h-3 text-[#0071E3]" />

@@ -245,7 +245,12 @@ export const PublicPostView: React.FC<PublicPostViewProps> = ({
               <img
                 src={user.photoURL || "/avatar.png"}
                 alt={user.displayName}
+                referrerPolicy="no-referrer"
+                crossOrigin="anonymous"
                 className="w-5 h-5 rounded-full object-cover border border-[#E5E5EA]"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = "/avatar.png";
+                }}
               />
               <span className="truncate max-w-[140px] sm:max-w-[200px]">
                 {user.displayName}

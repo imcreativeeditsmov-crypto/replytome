@@ -28,6 +28,8 @@ export default function OnboardingPage() {
   const [bio, setBio] = useState("");
   const [instagramUrl, setInstagramUrl] = useState("");
   const [photoURL, setPhotoURL] = useState("");
+  const [imageError, setImageError] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
   // Availability check states
@@ -59,6 +61,7 @@ export default function OnboardingPage() {
       setUsername(rawSlug);
       setInstagramUrl(`https://instagram.com/${rawSlug}`);
       setPhotoURL(user.photoURL || "");
+      setImageError(false);
     }
   }, [user, userProfile, authLoading, router]);
 
@@ -116,16 +119,34 @@ export default function OnboardingPage() {
     }
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && user) {
-      try {
-        const url = await PostService.uploadImage(file, user.uid);
-        setPhotoURL(url);
-      } catch (err) {
-        console.error("Failed to upload image:", err);
+    if (!file) return;
+
+    setImageError(false);
+
+    // 1. Instant local preview via FileReader (instant 0ms display for user)
+    const reader = new FileReader();
+    reader.onload = async () => {
+      const dataUrl = reader.result as string;
+      setPhotoURL(dataUrl);
+
+      // 2. Background cloud upload
+      if (user?.uid) {
+        try {
+          setUploadingImage(true);
+          const cloudUrl = await PostService.uploadImage(file, user.uid);
+          if (cloudUrl) {
+            setPhotoURL(cloudUrl);
+          }
+        } catch (err) {
+          console.warn("Storage upload failed, keeping local preview:", err);
+        } finally {
+          setUploadingImage(false);
+        }
       }
-    }
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -220,33 +241,73 @@ export default function OnboardingPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Avatar Upload */}
+          {/* Avatar Upload with Instant Preview & Camera Badge */}
           <div className="flex flex-col items-center">
-            <div className="relative group cursor-pointer">
-              <div className="w-24 h-24 rounded-full overflow-hidden bg-[#F5F5F7] border-2 border-[#E5E5EA] shadow-inner flex items-center justify-center">
-                {photoURL ? (
+            <div className="relative group">
+              <div className="w-24 h-24 rounded-full overflow-hidden bg-[#F5F5F7] border-2 border-[#E5E5EA] shadow-inner flex items-center justify-center relative">
+                {photoURL && !imageError ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={photoURL}
-                    alt="Avatar preview"
+                    alt={displayName || "Avatar preview"}
+                    referrerPolicy="no-referrer"
+                    crossOrigin="anonymous"
                     className="w-full h-full object-cover"
+                    onError={() => {
+                      console.warn("Avatar failed to load, falling back to initial");
+                      setImageError(true);
+                    }}
                   />
                 ) : (
-                  <AtSign className="w-8 h-8 text-[#86868B]" />
+                  <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-[#0071E3]/15 to-[#0071E3]/25 text-[#0071E3]">
+                    <span className="text-2xl font-bold uppercase select-none">
+                      {(displayName || username || "C").trim().charAt(0) || "C"}
+                    </span>
+                  </div>
+                )}
+
+                {/* Uploading indicator */}
+                {uploadingImage && (
+                  <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px] flex items-center justify-center">
+                    <Loader2 className="w-5 h-5 animate-spin text-white" />
+                  </div>
                 )}
               </div>
-              <label className="absolute inset-0 rounded-full bg-black/40 text-white flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+
+              {/* Full circular click / hover overlay */}
+              <label
+                htmlFor="avatar-file-input"
+                className="absolute inset-0 rounded-full bg-black/40 text-white flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+              >
                 <Camera className="w-5 h-5 mb-0.5" />
-                <span className="text-[10px] font-medium">Change</span>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
+                <span className="text-[10px] font-semibold">Change</span>
               </label>
+
+              {/* Camera icon badge in corner for instant discoverability */}
+              <label
+                htmlFor="avatar-file-input"
+                className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-[#0071E3] hover:bg-[#0077ED] text-white flex items-center justify-center shadow-md cursor-pointer transition-colors border-2 border-white"
+                title="Upload custom photo"
+              >
+                <Camera className="w-3.5 h-3.5" />
+              </label>
+
+              <input
+                id="avatar-file-input"
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
             </div>
-            <p className="text-xs text-[#86868B] mt-2">Tap photo to upload custom avatar</p>
+
+            <label
+              htmlFor="avatar-file-input"
+              className="text-xs font-medium text-[#0071E3] hover:underline mt-2.5 cursor-pointer flex items-center gap-1.5"
+            >
+              <Camera className="w-3.5 h-3.5" />
+              <span>Tap to upload custom photo</span>
+            </label>
           </div>
 
           {/* Display Name */}
