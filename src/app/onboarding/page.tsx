@@ -34,6 +34,7 @@ export default function OnboardingPage() {
   const [checkingUsername, setCheckingUsername] = useState(false);
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const [usernameError, setUsernameError] = useState<string | null>(null);
+  const [suggestedAlternative, setSuggestedAlternative] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   // Initialize from authenticated user or existing profile
@@ -51,9 +52,12 @@ export default function OnboardingPage() {
       }
 
       setDisplayName(user.displayName || "");
-      const suggestedUsername = slugify(user.displayName || "creator").replace(/-/g, "_");
-      setUsername(suggestedUsername);
-      setInstagramUrl(`https://instagram.com/${suggestedUsername}`);
+      let rawSlug = slugify(user.displayName || "creator").replace(/-/g, "_");
+      if (!rawSlug || rawSlug === "new_creator" || rawSlug === "creator") {
+        rawSlug = `creator_${Math.floor(100 + Math.random() * 900)}`;
+      }
+      setUsername(rawSlug);
+      setInstagramUrl(`https://instagram.com/${rawSlug}`);
       setPhotoURL(user.photoURL || "");
     }
   }, [user, userProfile, authLoading, router]);
@@ -63,6 +67,7 @@ export default function OnboardingPage() {
     if (!username) {
       setUsernameAvailable(null);
       setUsernameError(null);
+      setSuggestedAlternative(null);
       return;
     }
 
@@ -70,6 +75,7 @@ export default function OnboardingPage() {
     if (!validation.isValid) {
       setUsernameAvailable(false);
       setUsernameError(validation.error || "Invalid username");
+      setSuggestedAlternative(null);
       return;
     }
 
@@ -81,7 +87,11 @@ export default function OnboardingPage() {
         const available = await PostService.isUsernameAvailable(username, user?.uid);
         setUsernameAvailable(available);
         if (!available) {
+          const randomSuffix = Math.floor(10 + Math.random() * 90);
+          setSuggestedAlternative(`${username}_${randomSuffix}`);
           setUsernameError(`@${username} is already taken`);
+        } else {
+          setSuggestedAlternative(null);
         }
       } catch (e) {
         console.error(e);
@@ -287,7 +297,21 @@ export default function OnboardingPage() {
             </div>
 
             {usernameError ? (
-              <p className="text-xs text-[#FF3B30] mt-1.5 pl-1">{usernameError}</p>
+              <div className="flex items-center justify-between text-xs mt-1.5 pl-1">
+                <span className="text-[#FF3B30]">{usernameError}</span>
+                {suggestedAlternative && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setUsername(suggestedAlternative);
+                      setSuggestedAlternative(null);
+                    }}
+                    className="text-[#0071E3] font-semibold hover:underline cursor-pointer"
+                  >
+                    Try @{suggestedAlternative}
+                  </button>
+                )}
+              </div>
             ) : usernameAvailable ? (
               <p className="text-xs text-[#34C759] mt-1.5 pl-1 font-medium">
                 Awesome! @{username} is available.

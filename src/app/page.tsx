@@ -101,9 +101,12 @@ At 00:00, the restaurant interior is completely empty. The video must show the r
         } else {
           router.push("/dashboard");
         }
+      } else if (res.error && res.error !== "Popup closed") {
+        alert(res.error);
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error("Google sign-in error:", e);
+      alert(e?.message || "Google sign-in failed. Please try again.");
     } finally {
       setGoogleLoading(false);
     }

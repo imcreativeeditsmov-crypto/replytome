@@ -227,26 +227,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch (err: any) {
         setLoading(false);
         console.error("Firebase Google sign-in error:", err);
-        if (err?.code === "auth/popup-closed-by-user") {
+        if (err?.code === "auth/popup-closed-by-user" || err?.code === "auth/cancelled-popup-request") {
           return { success: false, user: null, error: "Popup closed" };
+        }
+        if (err?.code === "auth/unauthorized-domain") {
+          const currentDomain = typeof window !== "undefined" ? window.location.hostname : "replytome-three.vercel.app";
+          const msg = `Domain (${currentDomain}) is not authorized in Firebase! Please add "${currentDomain}" to Firebase Console -> Authentication -> Settings -> Authorized Domains.`;
+          if (typeof window !== "undefined") {
+            alert(msg);
+          }
+          return { success: false, user: null, error: msg };
         }
         return { success: false, user: null, error: err?.message || "Google sign-in failed" };
       }
     }
 
-    // Fallback if Firebase credentials are completely absent
-    const newUid = `user_google_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
-    const fallbackAuthUser: AuthUser = {
-      uid: newUid,
-      email: `creator_${Date.now().toString().slice(-4)}@gmail.com`,
-      displayName: "New Creator",
-      photoURL: `https://api.dicebear.com/7.x/identicon/svg?seed=${newUid}`,
-    };
-    setUser(fallbackAuthUser);
-    setUserProfile(null);
-    persistSession(fallbackAuthUser, null);
     setLoading(false);
-    return { success: true, user: fallbackAuthUser, profile: null };
+    return { success: false, user: null, error: "Firebase Authentication is not ready. Please try again." };
   };
 
 

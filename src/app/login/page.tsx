@@ -34,6 +34,7 @@ export default function LoginPage() {
   } = useAuth();
 
   const [loading, setLoading] = useState(false);
+  const [authErrorMessage, setAuthErrorMessage] = useState<string | null>(null);
   const [customName, setCustomName] = useState("");
   const [customHandle, setCustomHandle] = useState("");
   const [customInstagram, setCustomInstagram] = useState("");
@@ -56,6 +57,7 @@ export default function LoginPage() {
 
   const handleGoogleLogin = async () => {
     setLoading(true);
+    setAuthErrorMessage(null);
     try {
       const result = await signInWithGoogle();
       if (result.success && result.user) {
@@ -64,9 +66,12 @@ export default function LoginPage() {
         } else {
           router.push(redirectPath);
         }
+      } else if (result.error && result.error !== "Popup closed") {
+        setAuthErrorMessage(result.error);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Sign in failed:", err);
+      setAuthErrorMessage(err?.message || "Google sign-in failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -202,6 +207,14 @@ export default function LoginPage() {
                   <LogOut className="w-3.5 h-3.5" />
                 </button>
               </div>
+            </div>
+          )}
+
+          {/* Auth Error Banner */}
+          {authErrorMessage && (
+            <div className="mb-4 p-3.5 rounded-2xl bg-red-50 border border-red-200 text-xs text-red-700 leading-relaxed flex items-start gap-2">
+              <span className="font-bold flex-shrink-0">⚠️</span>
+              <span>{authErrorMessage}</span>
             </div>
           )}
 
