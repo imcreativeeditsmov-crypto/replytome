@@ -250,25 +250,6 @@ export default function LoginPage() {
               )}
               <span>{loading ? "Connecting to Google..." : "Continue with Google"}</span>
             </button>
-
-            {/* Primary Action 2: Admin Quick Sign-In */}
-            <button
-              type="button"
-              onClick={handleDemoLogin}
-              disabled={loading}
-              className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-white hover:bg-amber-500/15 text-[#1D1D1F] font-semibold text-xs border border-amber-500/30 transition-all apple-btn"
-            >
-              <ShieldCheck className="w-4 h-4 text-amber-600" />
-              <span>Sign in as Admin (@aibyshivai)</span>
-              <ArrowRight className="w-3.5 h-3.5 ml-0.5 text-amber-700" />
-            </button>
-
-            <Link
-              href="/aibyshivai"
-              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl bg-[#F5F5F7] hover:bg-[#EBEBED] text-[#1D1D1F] font-semibold text-xs border border-[#E5E5EA] transition-all apple-btn"
-            >
-              <span>View Shivai&apos;s Public Link in Bio</span>
-            </Link>
           </div>
 
 
