@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { InstagramIcon } from "@/components/icons/InstagramIcon";
+import { isPlatformAdmin } from "@/lib/auth/adminCheck";
 
 interface CreatorWithStats extends UserProfile {
   postsCount: number;
@@ -59,9 +60,15 @@ export default function AdminPage() {
   const [searchQuery, setSearchQuery] = useState("");
 
   const fetchStats = async () => {
+    if (!isAdmin) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
-      const res = await fetch(`/api/admin/stats?requesterUid=${userProfile?.uid || "shivai-creator-uid"}`);
+      const uidParam = encodeURIComponent(user?.uid || userProfile?.uid || "");
+      const userParam = encodeURIComponent(userProfile?.username || "");
+      const res = await fetch(`/api/admin/stats?requesterUid=${uidParam}&requesterUsername=${userParam}`);
       const data = await res.json();
       if (data.success && data.stats) {
         setStats(data.stats);
@@ -77,7 +84,7 @@ export default function AdminPage() {
     if (!authLoading) {
       fetchStats();
     }
-  }, [authLoading, userProfile]);
+  }, [authLoading, isAdmin, userProfile]);
 
   // Unauthorized screen if user is not admin
   if (!authLoading && !isAdmin) {
@@ -93,26 +100,18 @@ export default function AdminPage() {
           </div>
 
           <div>
-            <h1 className="text-xl font-bold text-[#1D1D1F]">Admin Access Required</h1>
+            <h1 className="text-xl font-bold text-[#1D1D1F]">Access Restricted</h1>
             <p className="text-xs text-[#6E6E73] mt-2 leading-relaxed">
-              This Super Admin console is restricted to the platform administrator (@aibyshivai).
+              The Super Admin console is strictly reserved for the platform owner (@aibyshivai). Your account does not have administrative privileges.
             </p>
           </div>
 
-          <div className="pt-2 flex flex-col gap-2.5">
-            <button
-              onClick={() => signInAsDemo()}
-              className="w-full py-3 px-4 rounded-xl bg-[#0071E3] hover:bg-[#0077ED] text-white text-xs font-semibold shadow-sm transition-all apple-btn flex items-center justify-center gap-2"
-            >
-              <Crown className="w-4 h-4 text-amber-300" />
-              <span>Switch to Admin (@aibyshivai)</span>
-            </button>
-
+          <div className="pt-2">
             <Link
               href="/dashboard"
-              className="w-full py-2.5 px-4 rounded-xl bg-[#F5F5F7] hover:bg-[#EBEBED] text-xs font-semibold text-[#1D1D1F] border border-[#E5E5EA] transition-all"
+              className="w-full py-3 px-4 rounded-xl bg-[#0071E3] hover:bg-[#0077ED] text-white text-xs font-semibold shadow-sm transition-all apple-btn flex items-center justify-center gap-2"
             >
-              Return to My Dashboard
+              <span>Return to My Dashboard</span>
             </Link>
           </div>
         </motion.div>
@@ -368,7 +367,7 @@ export default function AdminPage() {
                       </td>
 
                       <td className="py-4 px-4">
-                        {creator.isAdmin || creator.username === "aibyshivai" ? (
+                        {isPlatformAdmin(creator) ? (
                           <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
                             <Crown className="w-3 h-3 text-amber-600" />
                             <span>Super Admin</span>

@@ -1,4 +1,5 @@
 import { UserProfile, Post, PostTextBlock } from "@/types";
+import { isPlatformAdmin } from "@/lib/auth/adminCheck";
 
 export const INITIAL_DEMO_USER: UserProfile = {
   uid: "shivai-creator-uid",
@@ -54,7 +55,16 @@ function getStoredUsers(): UserProfile[] {
     const raw = localStorage.getItem(STORAGE_KEY_USERS);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.map((u: UserProfile) => {
+          const isSysAdmin = isPlatformAdmin(u);
+          return {
+            ...u,
+            isAdmin: isSysAdmin,
+            role: isSysAdmin ? "admin" : "creator",
+          };
+        });
+      }
     }
   } catch (e) {
     console.error(e);
@@ -65,7 +75,15 @@ function getStoredUsers(): UserProfile[] {
 function saveStoredUsers(users: UserProfile[]) {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(users));
+    const sanitized = users.map((u) => {
+      const isSysAdmin = isPlatformAdmin(u);
+      return {
+        ...u,
+        isAdmin: isSysAdmin,
+        role: isSysAdmin ? "admin" : "creator",
+      };
+    });
+    localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(sanitized));
   } catch (e) {
     console.error(e);
   }
@@ -75,7 +93,15 @@ function getStoredUser(): UserProfile {
   if (typeof window === "undefined") return INITIAL_DEMO_USER;
   try {
     const raw = localStorage.getItem(STORAGE_KEY_USER);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      const isSysAdmin = isPlatformAdmin(parsed);
+      return {
+        ...parsed,
+        isAdmin: isSysAdmin,
+        role: isSysAdmin ? "admin" : "creator",
+      };
+    }
   } catch (e) {
     console.error(e);
   }
@@ -96,13 +122,19 @@ function getStoredPosts(): Post[] {
 function saveStoredUser(user: UserProfile) {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(user));
+    const isSysAdmin = isPlatformAdmin(user);
+    const safeUser: UserProfile = {
+      ...user,
+      isAdmin: isSysAdmin,
+      role: isSysAdmin ? "admin" : "creator",
+    };
+    localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(safeUser));
     const all = getStoredUsers();
-    const idx = all.findIndex((u) => u.uid === user.uid || u.username.toLowerCase() === user.username.toLowerCase());
+    const idx = all.findIndex((u) => u.uid === safeUser.uid || u.username.toLowerCase() === safeUser.username.toLowerCase());
     if (idx !== -1) {
-      all[idx] = user;
+      all[idx] = safeUser;
     } else {
-      all.push(user);
+      all.push(safeUser);
     }
     saveStoredUsers(all);
   } catch (e) {
@@ -152,15 +184,47 @@ export const MockStore = {
   },
 
   updateUser(updates: Partial<UserProfile>): UserProfile {
-    const current = getStoredUser();
-    const updated = { ...current, ...updates, updatedAt: new Date().toISOString() };
+    const all = getStoredUsers();
+    const existing = all.find(
+      (u) =>
+        (updates.uid && u.uid === updates.uid) ||
+        (updates.username && u.username.toLowerCase() === updates.username.toLowerCase())
+    );
+
+    const base: UserProfile = existing || {
+      uid: updates.uid || `user_${Date.now()}`,
+      displayName: updates.displayName || "Creator",
+      username: updates.username || "creator",
+      bio: updates.bio || "Sharing my curated resources & links.",
+      photoURL: updates.photoURL || `https://api.dicebear.com/7.x/identicon/svg?seed=${updates.username || "creator"}`,
+      email: updates.email || "creator@gmail.com",
+      createdAt: new Date().toISOString(),
+    };
+
+    const isSysAdmin = isPlatformAdmin({ ...base, ...updates });
+    const updated: UserProfile = {
+      ...base,
+      ...updates,
+      bio: updates.bio !== undefined ? updates.bio : base.bio,
+      photoURL: updates.photoURL !== undefined ? updates.photoURL : base.photoURL,
+      isAdmin: isSysAdmin,
+      role: isSysAdmin ? "admin" : "creator",
+      updatedAt: new Date().toISOString(),
+    };
+
     saveStoredUser(updated);
     return updated;
   },
 
   addUser(user: UserProfile): UserProfile {
-    saveStoredUser(user);
-    return user;
+    const isSysAdmin = isPlatformAdmin(user);
+    const safeUser: UserProfile = {
+      ...user,
+      isAdmin: isSysAdmin,
+      role: isSysAdmin ? "admin" : "creator",
+    };
+    saveStoredUser(safeUser);
+    return safeUser;
   },
 
   getPosts(uid?: string): Post[] {

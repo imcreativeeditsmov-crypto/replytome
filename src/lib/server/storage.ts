@@ -3,6 +3,8 @@ import path from "path";
 import { UserProfile, Post } from "@/types";
 import { INITIAL_DEMO_USER, INITIAL_DEMO_POSTS } from "@/lib/firebase/mockData";
 
+import { isPlatformAdmin } from "@/lib/auth/adminCheck";
+
 export interface ServerStoreData {
   user: UserProfile;
   users: UserProfile[];
@@ -31,25 +33,21 @@ function ensureStoreFile(): ServerStoreData {
             ? parsed.users
             : [parsed.user || INITIAL_DEMO_USER];
 
+          // Sanitize every user: Only legitimate platform admin can be Super Admin
+          usersList.forEach((u) => {
+            const isSysAdmin = isPlatformAdmin(u);
+            u.isAdmin = isSysAdmin;
+            u.role = isSysAdmin ? "admin" : "creator";
+          });
+
           // Ensure AI by Shivai (Admin) exists in the users list
-          const hasAdmin = usersList.some(
-            (u) => u.username.toLowerCase() === "aibyshivai" || u.uid === "shivai-creator-uid"
-          );
+          const hasAdmin = usersList.some((u) => isPlatformAdmin(u));
           if (!hasAdmin) {
             usersList.unshift(INITIAL_DEMO_USER);
-          } else {
-            // Guarantee admin rights for aibyshivai
-            const adminUser = usersList.find(
-              (u) => u.username.toLowerCase() === "aibyshivai" || u.uid === "shivai-creator-uid"
-            );
-            if (adminUser) {
-              adminUser.isAdmin = true;
-              adminUser.role = "admin";
-            }
           }
 
           memoryStore = {
-            user: parsed.user || INITIAL_DEMO_USER,
+            user: isPlatformAdmin(parsed.user) ? parsed.user : INITIAL_DEMO_USER,
             users: usersList,
             posts: parsed.posts,
           };
@@ -135,15 +133,12 @@ export const ServerStorage = {
     const users = store.users || [store.user || INITIAL_DEMO_USER];
     const now = new Date().toISOString();
 
-    const isSystemAdmin =
-      user.username.toLowerCase() === "aibyshivai" ||
-      user.uid === "shivai-creator-uid" ||
-      user.email?.toLowerCase().includes("aibyshivai");
+    const isSystemAdmin = isPlatformAdmin(user);
 
     const updatedUser: UserProfile = {
       ...user,
-      isAdmin: isSystemAdmin ? true : Boolean(user.isAdmin),
-      role: isSystemAdmin ? "admin" : (user.role || "creator"),
+      isAdmin: isSystemAdmin,
+      role: isSystemAdmin ? "admin" : "creator",
       updatedAt: now,
     };
 
@@ -157,8 +152,8 @@ export const ServerStorage = {
       users.push(updatedUser);
     }
 
-    // If updating main user
-    if (isSystemAdmin || user.uid === store.user.uid) {
+    // Only update primary system user if the user is the actual platform admin
+    if (isSystemAdmin) {
       store.user = updatedUser;
     }
 
@@ -331,8 +326,11 @@ export const ServerStorage = {
       const userViews = userPosts.reduce((sum, p) => sum + (p.views || 0), 0);
       const userUnlocks = userPosts.reduce((sum, p) => sum + (p.unlocks || 0), 0);
 
+      const isSysAdmin = isPlatformAdmin(user);
       return {
         ...user,
+        isAdmin: isSysAdmin,
+        role: isSysAdmin ? "admin" : "creator",
         postsCount: userPosts.length,
         views: userViews,
         unlocks: userUnlocks,

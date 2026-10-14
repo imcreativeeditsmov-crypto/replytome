@@ -16,6 +16,7 @@ import {
 } from "@/lib/firebase/config";
 import { MockStore, INITIAL_DEMO_USER } from "@/lib/firebase/mockData";
 import { UserProfile } from "@/types";
+import { isPlatformAdmin } from "@/lib/auth/adminCheck";
 
 export interface AuthUser {
   uid: string;
@@ -78,7 +79,12 @@ function getInitialProfile(): UserProfile | null {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && parsed.username) {
-        return parsed;
+        const isSysAdmin = isPlatformAdmin(parsed);
+        return {
+          ...parsed,
+          isAdmin: isSysAdmin,
+          role: isSysAdmin ? "admin" : "creator",
+        };
       }
     }
   } catch (e) {
@@ -264,9 +270,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const cleanUsername = username.toLowerCase().trim().replace(/[^a-z0-9._]/g, "");
     const uid = `user_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
 
-    const isSystemAdmin =
-      cleanUsername === "aibyshivai" ||
-      email?.toLowerCase().includes("aibyshivai");
+    const isSystemAdmin = isPlatformAdmin({
+      username: cleanUsername,
+      email: email,
+      uid: uid,
+    });
 
     const authUser: AuthUser = {
       uid,
@@ -379,18 +387,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const updateProfileState = (profile: UserProfile) => {
-    setUserProfile(profile);
+    const isSysAdmin = isPlatformAdmin(profile);
+    const safeProfile: UserProfile = {
+      ...profile,
+      isAdmin: isSysAdmin,
+      role: isSysAdmin ? "admin" : "creator",
+    };
+    setUserProfile(safeProfile);
     if (user) {
-      persistSession(user, profile);
+      persistSession(user, safeProfile);
     }
   };
 
   const isAdmin = Boolean(
     user &&
-      (userProfile?.isAdmin ||
-        userProfile?.role === "admin" ||
-        userProfile?.username?.toLowerCase() === "aibyshivai" ||
-        user?.email?.toLowerCase().includes("aibyshivai"))
+      (isPlatformAdmin(userProfile) ||
+        isPlatformAdmin({
+          uid: user.uid,
+          email: user.email,
+          username: userProfile?.username,
+        }))
   );
 
 
