@@ -54,23 +54,18 @@ export const Footer: React.FC = () => {
             </h4>
             <ul className="space-y-2 text-[12px]">
               <li>
-                <Link href="/aibyshivai" className="hover:text-[#1D1D1F] transition-colors">
-                  Featured Bio: @aibyshivai
-                </Link>
-              </li>
-              <li>
-                <Link href="/aibyshivai/cafe-build-prompt" className="hover:text-[#1D1D1F] transition-colors">
-                  Cafe Build VFX Pack
+                <Link href="/#demo" className="hover:text-[#1D1D1F] transition-colors">
+                  Interactive Live Reel Demo
                 </Link>
               </li>
               <li>
                 <Link href="/login" className="hover:text-[#1D1D1F] transition-colors">
-                  Claim Your Handle
+                  Claim Your Bio Handle
                 </Link>
               </li>
               <li>
-                <Link href="/#how-it-works" className="hover:text-[#1D1D1F] transition-colors">
-                  Algorithm Flywheel
+                <Link href="/#about" className="hover:text-[#1D1D1F] transition-colors">
+                  Platform Architecture
                 </Link>
               </li>
             </ul>
@@ -194,7 +189,13 @@ export const Footer: React.FC = () => {
               <span>All Systems Operational</span>
             </span>
             <span>•</span>
-            <span>Built for Creators</span>
+            <Link
+              href="/admin"
+              className="text-[#7E828A] hover:text-[#0A0A0A] opacity-60 hover:opacity-100 transition-opacity"
+              title="Super Admin Portal"
+            >
+              🔒
+            </Link>
           </div>
         </div>
       </div>

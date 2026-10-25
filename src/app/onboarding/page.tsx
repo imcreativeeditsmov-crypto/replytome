@@ -60,7 +60,13 @@ export default function OnboardingPage() {
       }).catch(() => {});
 
       setDisplayName(user.displayName || "");
-      let rawSlug = slugify(user.displayName || "creator").replace(/-/g, "_");
+      let claimed = "";
+      if (typeof window !== "undefined") {
+        try {
+          claimed = localStorage.getItem("replyto_claimed_handle") || "";
+        } catch {}
+      }
+      let rawSlug = claimed || slugify(user.displayName || "creator").replace(/-/g, "_");
       if (!rawSlug || rawSlug === "new_creator" || rawSlug === "creator") {
         rawSlug = `creator_${Math.floor(100 + Math.random() * 900)}`;
       }
@@ -316,7 +322,7 @@ export default function OnboardingPage() {
               required
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="e.g. AI by Shivai"
+              placeholder="e.g. Alex Rivera"
               className="w-full px-3.5 py-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.06] text-xs text-[#1D1D1F] placeholder-[#A1A1A6] focus:bg-white focus:border-[#0071E3] outline-none transition-all"
             />
           </div>

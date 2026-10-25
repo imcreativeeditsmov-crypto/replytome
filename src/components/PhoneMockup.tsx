@@ -7,7 +7,7 @@ interface PhoneMockupProps {
 
 export const PhoneMockup: React.FC<PhoneMockupProps> = ({
   children,
-  urlBarText = "replyto.me/aibyshivai",
+  urlBarText = "replyto.me/yourname",
 }) => {
   return (
     <div className="relative mx-auto w-full max-w-[340px] sm:max-w-[380px] aspect-[9/19] rounded-[48px] p-3 bg-[#1D1D1F] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] ring-1 ring-[#1D1D1F]/20 select-none">

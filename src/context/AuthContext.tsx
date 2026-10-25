@@ -63,13 +63,6 @@ const AUTH_PROFILE_KEY = "replyto_auth_profile_v7";
 const REDIRECT_TARGET_KEY = "replyto_auth_redirect_target";
 const REDIRECT_PENDING_KEY = "replyto_google_redirect_pending";
 
-export const DEFAULT_SHIVAI_USER: AuthUser = {
-  uid: "shivai-creator-uid",
-  displayName: "AI by Shivai",
-  email: "aibyshivai@gmail.com",
-  photoURL: "/avatar.png",
-};
-
 export function isInAppBrowser(): boolean {
   if (typeof window === "undefined") return false;
   const ua = navigator.userAgent || navigator.vendor || (window as any).opera || "";
@@ -82,6 +75,17 @@ function getInitialUser(): AuthUser | null {
     const raw = localStorage.getItem(AUTH_USER_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
+      if (
+        parsed &&
+        (parsed.uid === "shivai-creator-uid" ||
+          parsed.username === "aibyshivai" ||
+          parsed.email?.includes("aibyshivai") ||
+          parsed.displayName?.includes("Shivai"))
+      ) {
+        localStorage.removeItem(AUTH_USER_KEY);
+        localStorage.removeItem(AUTH_PROFILE_KEY);
+        return null;
+      }
       if (parsed && parsed.uid) {
         return parsed;
       }
@@ -98,6 +102,17 @@ function getInitialProfile(): UserProfile | null {
     const raw = localStorage.getItem(AUTH_PROFILE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
+      if (
+        parsed &&
+        (parsed.uid === "shivai-creator-uid" ||
+          parsed.username === "aibyshivai" ||
+          parsed.email?.includes("aibyshivai") ||
+          parsed.displayName?.includes("Shivai"))
+      ) {
+        localStorage.removeItem(AUTH_USER_KEY);
+        localStorage.removeItem(AUTH_PROFILE_KEY);
+        return null;
+      }
       if (parsed && parsed.username) {
         const isSysAdmin = isPlatformAdmin(parsed);
         return {
@@ -198,12 +213,22 @@ const AuthContext = createContext<AuthContextType>({
   signInWithGoogleRedirect: async () => {},
   signInWithCustomUser: async () => ({
     success: true,
-    user: DEFAULT_SHIVAI_USER,
+    user: {
+      uid: INITIAL_DEMO_USER.uid,
+      displayName: INITIAL_DEMO_USER.displayName,
+      email: INITIAL_DEMO_USER.email,
+      photoURL: INITIAL_DEMO_USER.photoURL,
+    },
     profile: INITIAL_DEMO_USER,
   }),
   signInAsDemo: async () => ({
     success: true,
-    user: DEFAULT_SHIVAI_USER,
+    user: {
+      uid: INITIAL_DEMO_USER.uid,
+      displayName: INITIAL_DEMO_USER.displayName,
+      email: INITIAL_DEMO_USER.email,
+      photoURL: INITIAL_DEMO_USER.photoURL,
+    },
     profile: INITIAL_DEMO_USER,
   }),
   signOut: async () => {},
@@ -571,35 +596,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { success: true, user: authUser, profile: newProfile };
   };
 
-  /**
-   * One-click Super Admin Sign-in (AI by Shivai)
-   */
   const signInAsDemo = async (): Promise<{
     success: boolean;
     user: AuthUser;
     profile: UserProfile;
   }> => {
     setLoading(true);
-    const adminProfile: UserProfile = {
+    const demoProfile: UserProfile = {
       ...INITIAL_DEMO_USER,
-      isAdmin: true,
-      role: "admin",
     };
 
     const authUser: AuthUser = {
-      uid: adminProfile.uid,
-      displayName: adminProfile.displayName,
-      photoURL: adminProfile.photoURL,
-      email: "aibyshivai@gmail.com",
+      uid: demoProfile.uid,
+      displayName: demoProfile.displayName,
+      photoURL: demoProfile.photoURL,
+      email: demoProfile.email,
     };
 
     setUser(authUser);
-    setUserProfile(adminProfile);
-    persistSession(authUser, adminProfile);
+    setUserProfile(demoProfile);
+    persistSession(authUser, demoProfile);
     setIsDemoMode(true);
     setLoading(false);
 
-    return { success: true, user: authUser, profile: adminProfile };
+    return { success: true, user: authUser, profile: demoProfile };
   };
 
   /**

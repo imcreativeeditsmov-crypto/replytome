@@ -40,14 +40,8 @@ function ensureStoreFile(): ServerStoreData {
             u.role = isSysAdmin ? "admin" : "creator";
           });
 
-          // Ensure AI by Shivai (Admin) exists in the users list
-          const hasAdmin = usersList.some((u) => isPlatformAdmin(u));
-          if (!hasAdmin) {
-            usersList.unshift(INITIAL_DEMO_USER);
-          }
-
           memoryStore = {
-            user: isPlatformAdmin(parsed.user) ? parsed.user : INITIAL_DEMO_USER,
+            user: isPlatformAdmin(parsed.user) ? parsed.user : (usersList[0] || INITIAL_DEMO_USER),
             users: usersList,
             posts: parsed.posts,
           };

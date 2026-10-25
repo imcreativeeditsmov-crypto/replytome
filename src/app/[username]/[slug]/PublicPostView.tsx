@@ -149,7 +149,7 @@ export const PublicPostView: React.FC<PublicPostViewProps> = ({
       navigator
         .share({
           title: post.title,
-          text: `Check out ${post.title} by ${user?.displayName || "AI by Shivai"}`,
+          text: `Check out ${post.title} by ${user?.displayName || "Creator"}`,
           url: postUrl,
         })
         .catch(() => setShareOpen(true));

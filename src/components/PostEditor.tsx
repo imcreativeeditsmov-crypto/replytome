@@ -336,7 +336,7 @@ export const PostEditor: React.FC<PostEditorProps> = ({
                 <p className="text-[11px] text-[#86868B] mb-2 font-medium">Reel Card Preview:</p>
                 <ReelPreviewCard
                   reelUrl={reelUrl}
-                  creatorName={userProfile?.displayName || "AI by Shivai"}
+                  creatorName={userProfile?.displayName || "Creator"}
                 />
               </div>
             )}

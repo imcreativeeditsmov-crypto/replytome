@@ -25,7 +25,14 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { InstagramIcon } from "@/components/icons/InstagramIcon";
-import { isPlatformAdmin } from "@/lib/auth/adminCheck";
+import {
+  isPlatformAdmin,
+  verifyAdminPasscode,
+  isAdminSessionUnlocked,
+  setAdminSessionUnlocked,
+  setAdminPasscode,
+} from "@/lib/auth/adminCheck";
+import { KeyRound, EyeOff } from "lucide-react";
 
 interface CreatorWithStats extends UserProfile {
   postsCount: number;
@@ -52,23 +59,33 @@ interface AdminStats {
 
 export default function AdminPage() {
   const router = useRouter();
-  const { user, userProfile, isAdmin, loading: authLoading, signInAsDemo } = useAuth();
+  const { user, userProfile, isAdmin, loading: authLoading } = useAuth();
+
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [passcodeInput, setPasscodeInput] = useState("");
+  const [passcodeError, setPasscodeError] = useState("");
+  const [showPasscodeText, setShowPasscodeText] = useState(false);
+  const [showChangeModal, setShowChangeModal] = useState(false);
+  const [newPasscode, setNewPasscode] = useState("");
+  const [passcodeNotice, setPasscodeNotice] = useState("");
 
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"creators" | "posts">("creators");
   const [searchQuery, setSearchQuery] = useState("");
 
+  useEffect(() => {
+    setIsUnlocked(isAdminSessionUnlocked());
+  }, []);
+
   const fetchStats = async () => {
-    if (!isAdmin) {
-      setLoading(false);
-      return;
-    }
     setLoading(true);
     try {
       const uidParam = encodeURIComponent(user?.uid || userProfile?.uid || "");
       const userParam = encodeURIComponent(userProfile?.username || "");
-      const res = await fetch(`/api/admin/stats?requesterUid=${uidParam}&requesterUsername=${userParam}`);
+      const res = await fetch(
+        `/api/admin/stats?requesterUid=${uidParam}&requesterUsername=${userParam}&passcode=creative2026`
+      );
       const data = await res.json();
       if (data.success && data.stats) {
         setStats(data.stats);
@@ -81,37 +98,88 @@ export default function AdminPage() {
   };
 
   useEffect(() => {
-    if (!authLoading) {
+    if (isUnlocked) {
       fetchStats();
     }
-  }, [authLoading, isAdmin, userProfile]);
+  }, [isUnlocked]);
 
-  // Unauthorized screen if user is not admin
-  if (!authLoading && !isAdmin) {
+  // Security Gate: require admin passcode
+  if (!isUnlocked) {
     return (
       <div className="min-h-screen bg-[#F5F5F7] flex items-center justify-center p-4">
         <motion.div
           initial={{ opacity: 0, scale: 0.96 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="max-w-md w-full bg-white rounded-3xl p-8 border border-[#E5E5EA] shadow-xl text-center space-y-5"
+          className="max-w-md w-full bg-white rounded-[28px] p-8 border border-black/[0.08] shadow-[0_16px_40px_rgba(0,0,0,0.06)] text-center space-y-6"
         >
-          <div className="w-16 h-16 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center mx-auto border border-red-100">
-            <Lock className="w-8 h-8" />
+          <div className="w-16 h-16 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center mx-auto border border-amber-500/20 shadow-sm">
+            <Lock className="w-8 h-8 text-amber-500" />
           </div>
 
           <div>
-            <h1 className="text-xl font-bold text-[#1D1D1F]">Access Restricted</h1>
-            <p className="text-xs text-[#6E6E73] mt-2 leading-relaxed">
-              The Super Admin console is strictly reserved for the platform owner (@aibyshivai). Your account does not have administrative privileges.
+            <h1 className="text-xl font-black text-[#0A0A0A] tracking-tight">Super Admin Security Gate</h1>
+            <p className="text-xs text-[#7E828A] mt-2 leading-relaxed">
+              Platform management is restricted. Enter your private Admin Passcode to view creator analytics, user directory, and post gates.
             </p>
           </div>
 
-          <div className="pt-2">
-            <Link
-              href="/dashboard"
-              className="w-full py-3 px-4 rounded-xl bg-[#0071E3] hover:bg-[#0077ED] text-white text-xs font-semibold shadow-sm transition-all apple-btn flex items-center justify-center gap-2"
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (verifyAdminPasscode(passcodeInput)) {
+                setAdminSessionUnlocked(true);
+                setIsUnlocked(true);
+                setPasscodeError("");
+              } else {
+                setPasscodeError("Incorrect Admin Passcode. Access denied.");
+              }
+            }}
+            className="space-y-4 text-left"
+          >
+            <div>
+              <label className="block text-xs font-semibold text-[#0A0A0A] mb-1.5">
+                Admin Passcode
+              </label>
+              <div className="relative">
+                <input
+                  type={showPasscodeText ? "text" : "password"}
+                  required
+                  value={passcodeInput}
+                  onChange={(e) => {
+                    setPasscodeInput(e.target.value);
+                    setPasscodeError("");
+                  }}
+                  placeholder="Enter admin passcode"
+                  className="w-full px-4 py-3 rounded-xl bg-[#F5F5F7] border border-black/[0.08] text-xs font-mono text-[#0A0A0A] outline-none focus:bg-white focus:border-[#0D82ED] transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPasscodeText(!showPasscodeText)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#7E828A] hover:text-[#0A0A0A]"
+                >
+                  {showPasscodeText ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              {passcodeError && (
+                <p className="text-xs text-rose-600 font-medium mt-1.5">{passcodeError}</p>
+              )}
+            </div>
+
+            <button
+              type="submit"
+              className="btn-lime w-full justify-center py-3 text-xs font-black shadow-sm"
             >
-              <span>Return to My Dashboard</span>
+              <span>Unlock Admin Console</span>
+              <Unlock className="w-3.5 h-3.5 stroke-[2.5]" />
+            </button>
+          </form>
+
+          <div className="pt-2 border-t border-black/[0.06]">
+            <Link
+              href="/"
+              className="text-xs text-[#7E828A] hover:text-[#0A0A0A] font-semibold transition-colors"
+            >
+              ← Back to Homepage
             </Link>
           </div>
         </motion.div>
@@ -173,17 +241,38 @@ export default function AdminPage() {
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white hover:bg-[#F5F5F7] text-xs font-semibold text-[#1D1D1F] border border-[#E5E5EA] shadow-sm transition-all apple-btn"
             >
               <RefreshCw className={`w-3.5 h-3.5 text-[#6E6E73] ${loading ? "animate-spin" : ""}`} />
-              <span className="hidden sm:inline">Refresh Data</span>
+              <span className="hidden sm:inline">Refresh</span>
             </button>
 
-            <Link
-              href={`/${userProfile?.username || "aibyshivai"}`}
-              target="_blank"
-              className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-[#0071E3] hover:bg-[#0077ED] text-xs font-semibold text-white shadow-sm transition-all apple-btn"
+            <button
+              onClick={() => setShowChangeModal(true)}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-white hover:bg-[#F5F5F7] text-xs font-semibold text-[#1D1D1F] border border-[#E5E5EA] shadow-sm transition-all"
             >
-              <span>My Bio Page</span>
-              <ExternalLink className="w-3 h-3 opacity-80" />
-            </Link>
+              <span>Change Passcode</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setAdminSessionUnlocked(false);
+                setIsUnlocked(false);
+              }}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-rose-50 hover:bg-rose-100 text-xs font-semibold text-rose-700 border border-rose-200 transition-all"
+              title="Lock Admin Console"
+            >
+              <Lock className="w-3 h-3 text-rose-600" />
+              <span>Lock Admin</span>
+            </button>
+
+            {userProfile?.username && (
+              <Link
+                href={`/${userProfile.username}`}
+                target="_blank"
+                className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-[#0D82ED] hover:bg-[#0972D3] text-xs font-semibold text-white shadow-sm transition-all apple-btn"
+              >
+                <span>My Bio</span>
+                <ExternalLink className="w-3 h-3 opacity-80" />
+              </Link>
+            )}
           </div>
         </div>
       </header>
@@ -569,6 +658,82 @@ export default function AdminPage() {
           </div>
         )}
       </main>
+
+      {/* Change Passcode Modal */}
+      {showChangeModal && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="w-full max-w-sm bg-white rounded-[24px] p-6 border border-black/[0.08] shadow-2xl space-y-4"
+          >
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold text-[#0A0A0A]">Change Admin Passcode</h3>
+              <button
+                onClick={() => {
+                  setShowChangeModal(false);
+                  setPasscodeNotice("");
+                  setNewPasscode("");
+                }}
+                className="text-xs text-[#7E828A] hover:text-[#0A0A0A]"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="text-xs text-[#7E828A]">
+              Set your new custom Admin Passcode. Default is <code className="bg-black/5 px-1 py-0.5 rounded font-mono">creative2026</code>.
+            </p>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (newPasscode.trim().length < 4) {
+                  setPasscodeNotice("Passcode must be at least 4 characters.");
+                  return;
+                }
+                setAdminPasscode(newPasscode.trim());
+                setPasscodeNotice("Passcode updated successfully! ✅");
+                setTimeout(() => {
+                  setShowChangeModal(false);
+                  setPasscodeNotice("");
+                  setNewPasscode("");
+                }, 1500);
+              }}
+              className="space-y-3"
+            >
+              <input
+                type="text"
+                required
+                value={newPasscode}
+                onChange={(e) => setNewPasscode(e.target.value)}
+                placeholder="Enter new passcode"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.08] text-xs font-mono text-[#0A0A0A] outline-none focus:bg-white focus:border-[#0D82ED]"
+              />
+
+              {passcodeNotice && (
+                <p className="text-xs font-semibold text-emerald-600">{passcodeNotice}</p>
+              )}
+
+              <div className="flex items-center gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowChangeModal(false)}
+                  className="flex-1 py-2 rounded-xl bg-[#F5F5F7] hover:bg-[#EAEBED] text-xs font-semibold text-[#0A0A0A]"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2 rounded-xl btn-lime text-xs font-black shadow-none justify-center"
+                >
+                  Save Passcode
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }

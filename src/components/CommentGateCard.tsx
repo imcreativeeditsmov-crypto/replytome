@@ -33,7 +33,7 @@ export const CommentGateCard: React.FC<CommentGateCardProps> = ({
   onUnlockSuccess,
 }) => {
   const cleanKeyword = keyword ? keyword.trim().toUpperCase() : "PROMPT";
-  const targetReelUrl = reelUrl || "https://www.instagram.com/aibyshivai/";
+  const targetReelUrl = reelUrl || "https://www.instagram.com/creativeedits.mov/";
 
   const [reelVisited, setReelVisited] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;

@@ -14,6 +14,7 @@ import {
   LayoutDashboard,
   ArrowUpRight,
 } from "lucide-react";
+import { isAdminSessionUnlocked } from "@/lib/auth/adminCheck";
 
 export const Navbar: React.FC = () => {
   const router = useRouter();
@@ -21,18 +22,20 @@ export const Navbar: React.FC = () => {
   const { user, userProfile, isAdmin, signOut } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [adminUnlocked, setAdminUnlocked] = useState(false);
 
   const isHome = pathname === "/";
-  const displayName = userProfile?.displayName || "Creator";
-  const avatarUrl = userProfile?.photoURL || "/avatar.png";
+  const displayName = userProfile?.displayName || user?.displayName || "Creator";
+  const avatarUrl = userProfile?.photoURL || user?.photoURL || "/avatar.png";
 
   useEffect(() => {
+    setAdminUnlocked(isAdminSessionUnlocked());
     const handleScroll = () => {
       setScrolled(window.scrollY > 30);
     };
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  }, [pathname]);
 
   // On home page top, navbar is translucent white-text over sky blue. On scroll or inner pages, crisp glass.
   const isTransparent = isHome && !scrolled;
@@ -112,17 +115,20 @@ export const Navbar: React.FC = () => {
             <span>Live Demo</span>
             <ChevronDown className="w-3 h-3 opacity-70" />
           </Link>
-          <Link
-            href="/aibyshivai"
-            className={`transition-colors flex items-center gap-1 ${
-              isTransparent ? "hover:text-white" : "hover:text-[#0A0A0A]"
-            }`}
-          >
-            <span>Live Bio</span>
-            <ArrowUpRight className="w-3.5 h-3.5 opacity-80" />
-          </Link>
 
-          {isAdmin && (
+          {userProfile?.username && (
+            <Link
+              href={`/${userProfile.username}`}
+              className={`transition-colors flex items-center gap-1 ${
+                isTransparent ? "hover:text-white" : "hover:text-[#0A0A0A]"
+              }`}
+            >
+              <span>My Bio</span>
+              <ArrowUpRight className="w-3.5 h-3.5 opacity-80" />
+            </Link>
+          )}
+
+          {isAdmin && adminUnlocked && (
             <Link
               href="/admin"
               className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-400 text-black shadow-sm"
@@ -242,13 +248,15 @@ export const Navbar: React.FC = () => {
           >
             Live Demo
           </Link>
-          <Link
-            href="/aibyshivai"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block text-sm font-bold uppercase tracking-wider text-[#0D82ED]"
-          >
-            Live Creator Bio ↗
-          </Link>
+          {userProfile?.username && (
+            <Link
+              href={`/${userProfile.username}`}
+              onClick={() => setMobileMenuOpen(false)}
+              className="block text-sm font-bold uppercase tracking-wider text-[#0D82ED]"
+            >
+              My Live Bio ↗
+            </Link>
+          )}
           <div className="pt-2">
             <Link
               href={user ? "/dashboard" : "/login"}

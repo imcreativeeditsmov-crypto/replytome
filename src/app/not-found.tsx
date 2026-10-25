@@ -38,10 +38,10 @@ export default function NotFound() {
             <span>Back to Home</span>
           </Link>
           <Link
-            href="/aibyshivai"
+            href="/#demo"
             className="w-full sm:w-auto px-6 py-3 rounded-full bg-[#F5F5F7] text-[#1D1D1F] text-xs font-semibold hover:bg-[#EBEBED] transition-all border border-[#E5E5EA]"
           >
-            Explore Shivai&apos;s Bio
+            Explore Live Demo
           </Link>
         </div>
       </main>

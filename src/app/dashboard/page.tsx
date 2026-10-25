@@ -292,7 +292,7 @@ export default function DashboardPage() {
                     user?.photoURL ||
                     "/avatar.png"
                   }
-                  alt={userProfile?.displayName || "AI by Shivai"}
+                  alt={userProfile?.displayName || user?.displayName || "Creator"}
                   referrerPolicy="no-referrer"
                   crossOrigin="anonymous"
                   className="w-full h-full object-cover"
