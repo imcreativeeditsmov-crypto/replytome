@@ -309,10 +309,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               sessionStorage.removeItem(REDIRECT_TARGET_KEY);
             }
 
-            // CRITICAL: If new user without a username, always send to /onboarding!
-            const destination = (profile && profile.username)
-              ? (redirectTarget || "/dashboard")
-              : "/onboarding";
+            // CRITICAL: Always send directly to /dashboard post-login!
+            const destination = "/dashboard";
 
             if (typeof window !== "undefined") {
               const currentPath = window.location.pathname.replace(/\/$/, "");
@@ -343,7 +341,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             photoURL: fbUser.photoURL,
           };
           setUser(authUser);
-          persistSession(authUser, undefined);
 
           // Fast-path: If platform owner aibyshivai@gmail.com, immediately set his owner profile
           const isOwner =
@@ -368,22 +365,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             return;
           }
 
-          // Fetch profile safely for regular creators
+          // Fetch or auto-provision profile safely for regular creators
           try {
-            const profile = await fetchUserProfileSafely(fbUser.uid, fbUser.email);
-            if (profile) {
-              setUserProfile(profile);
-              persistSession(authUser, profile);
-            } else {
-              const cached = getInitialProfile();
-              if (cached && (cached.uid === fbUser.uid || cached.email === fbUser.email)) {
-                setUserProfile(cached);
-              } else {
-                setUserProfile(null);
-              }
+            let profile = await fetchUserProfileSafely(fbUser.uid, fbUser.email);
+            if (!profile || !profile.username) {
+              const fallbackUsername = (fbUser.displayName || fbUser.email?.split("@")[0] || "creator")
+                .toLowerCase()
+                .replace(/[^a-z0-9._]/g, "") || `creator_${fbUser.uid.slice(0, 5)}`;
+              profile = {
+                uid: fbUser.uid,
+                displayName: fbUser.displayName || "Creator",
+                username: fallbackUsername,
+                email: fbUser.email || `${fallbackUsername}@gmail.com`,
+                bio: "Sharing my curated resources, links & guides.",
+                photoURL: fbUser.photoURL || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80",
+                instagramUrl: `https://instagram.com/${fallbackUsername}`,
+                isAdmin: false,
+                role: "creator",
+                createdAt: new Date().toISOString(),
+              };
             }
+            setUserProfile(profile);
+            persistSession(authUser, profile);
           } catch (e) {
             console.warn("onAuthStateChanged profile check:", e);
+          }
+        } else {
+          // Firebase onAuthStateChanged returned null.
+          // NEVER wipe the session if localStorage has a cached user!
+          // Only explicit signOut() wipes the session.
+          const cachedUser = getInitialUser();
+          if (!cachedUser) {
+            setUser(null);
+            setUserProfile(null);
           }
         }
         setLoading(false);
@@ -457,23 +471,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         photoURL: fbUser.photoURL,
       };
 
-      // 1. Instantly set user and persist session BEFORE any network calls
-      setUser(authUser);
-      setIsDemoMode(false);
-      persistSession(authUser, null);
+      // Fast profile provisioning
+      const isOwner =
+        fbUser.email?.toLowerCase().trim() === "aibyshivai@gmail.com" ||
+        fbUser.email?.toLowerCase().includes("aibyshivai");
 
-      // 2. Fetch profile safely without blocking
-      let profile: UserProfile | null = null;
-      try {
-        profile = await fetchUserProfileSafely(fbUser.uid, fbUser.email);
-        if (profile) {
-          setUserProfile(profile);
-          persistSession(authUser, profile);
+      let profile: UserProfile;
+      if (isOwner) {
+        profile = {
+          uid: fbUser.uid,
+          displayName: fbUser.displayName || "shivai",
+          username: "aibyshivai",
+          email: "aibyshivai@gmail.com",
+          bio: "Creator & Platform Super Admin @creativeedits.mov",
+          photoURL: fbUser.photoURL || "https://lh3.googleusercontent.com/a/ACg8ocJ9qWnDSojX5KvmBmcLNNTSuvefpZR2yQRh0rsX2DynIXdeo7I=s96-c",
+          instagramUrl: "https://www.instagram.com/creativeedits.mov/",
+          isAdmin: true,
+          role: "admin",
+          createdAt: new Date().toISOString(),
+        };
+      } else {
+        const fetched = await fetchUserProfileSafely(fbUser.uid, fbUser.email).catch(() => null);
+        if (fetched && fetched.username) {
+          profile = fetched;
+        } else {
+          const defaultUsername = (fbUser.displayName || fbUser.email?.split("@")[0] || "creator")
+            .toLowerCase()
+            .replace(/[^a-z0-9._]/g, "") || `creator_${fbUser.uid.slice(0, 5)}`;
+          profile = {
+            uid: fbUser.uid,
+            displayName: fbUser.displayName || defaultUsername,
+            username: defaultUsername,
+            email: fbUser.email || `${defaultUsername}@gmail.com`,
+            bio: "Sharing my curated resources, links & guides.",
+            photoURL: fbUser.photoURL || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80",
+            instagramUrl: `https://instagram.com/${defaultUsername}`,
+            isAdmin: false,
+            role: "creator",
+            createdAt: new Date().toISOString(),
+          };
         }
-      } catch (e) {
-        console.warn("Profile fetch non-fatal:", e);
       }
 
+      setUser(authUser);
+      setUserProfile(profile);
+      setIsDemoMode(false);
+      persistSession(authUser, profile);
       setLoading(false);
       return { success: true, user: authUser, profile };
     } catch (err: any) {

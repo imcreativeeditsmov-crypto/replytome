@@ -23,10 +23,8 @@ export default function LoginPage() {
 
   const {
     user,
-    userProfile,
     loading: authLoading,
     signInWithGoogle,
-    signInWithCustomUser,
   } = useAuth();
 
   const [loading, setLoading] = useState(false);
@@ -53,85 +51,61 @@ export default function LoginPage() {
     }
   }, []);
 
-  // Auto-route if already logged in
+  // Auto-route if already logged in -> ALWAYS directly to /dashboard!
   useEffect(() => {
     if (!authLoading && user) {
       setRedirecting(true);
-      const isOwner = user.email?.toLowerCase().trim() === "aibyshivai@gmail.com" || user.email?.toLowerCase().includes("aibyshivai");
-      const dest = isOwner
-        ? (redirectPath || "/dashboard")
-        : (!userProfile || !userProfile.username) ? "/onboarding" : redirectPath;
-      router.push(dest);
       if (typeof window !== "undefined") {
-        setTimeout(() => {
-          if (window.location.pathname === "/login") {
-            window.location.href = dest;
-          }
-        }, 400);
+        window.location.replace("/dashboard");
+      } else {
+        router.push("/dashboard");
       }
     }
-  }, [user, userProfile, authLoading, redirectPath, router]);
+  }, [user, authLoading, router]);
 
   const handleGoogleLogin = async () => {
     setLoading(true);
-    setRedirecting(true);
     setAuthErrorMessage(null);
     setPopupBlocked(false);
 
     try {
-      // 1. Try Firebase popup with a 2.5s race
-      const result = await Promise.race([
-        signInWithGoogle({
-          useRedirect: false,
-          targetPath: redirectPath,
-        }),
-        new Promise<{ timeout: true }>((resolve) =>
-          setTimeout(() => resolve({ timeout: true }), 2500)
-        ),
-      ]);
+      // Call Firebase Google sign-in (popup first, auto-fallback to redirect inside AuthContext)
+      const result = await signInWithGoogle({
+        useRedirect: false,
+        targetPath: "/dashboard",
+      });
 
-      if (result && "success" in result && result.success && result.user) {
-        const isOwner =
-          result.user.email?.toLowerCase().trim() === "aibyshivai@gmail.com" ||
-          result.user.email?.toLowerCase().includes("aibyshivai");
-        const dest = isOwner
-          ? (redirectPath || "/dashboard")
-          : (!result.profile || !result.profile.username) ? "/onboarding" : redirectPath;
-
+      if (result && result.success && result.user) {
+        // Sign-in succeeded — immediately open /dashboard
+        setRedirecting(true);
         if (typeof window !== "undefined") {
-          window.location.href = dest;
+          window.location.replace("/dashboard");
         } else {
-          router.push(dest);
+          router.push("/dashboard");
         }
         return;
       }
-    } catch (e) {
-      console.warn("Firebase popup handshake bypassed by browser protections:", e);
-    }
 
-    // 2. Guaranteed Instant Sign-In to Dashboard:
-    // If Brave Shields, AdBlock, or cross-origin handshake fails in user's browser,
-    // immediately log the user in as shivai (@aibyshivai) and open dashboard!
-    try {
-      const res = await signInWithCustomUser({
-        displayName: "shivai",
-        username: "aibyshivai",
-        email: "aibyshivai@gmail.com",
-        photoURL: "https://lh3.googleusercontent.com/a/ACg8ocJ9qWnDSojX5KvmBmcLNNTSuvefpZR2yQRh0rsX2DynIXdeo7I=s96-c",
-        instagramUrl: "https://instagram.com/creativeedits.mov",
-      });
+      if (result && result.redirecting) {
+        // Full-page redirect is happening (signInWithRedirect), page will reload automatically
+        setRedirecting(true);
+        return;
+      }
 
-      const dest = redirectPath || "/dashboard";
-      if (typeof window !== "undefined") {
-        window.location.href = dest;
-      } else {
-        router.push(dest);
+      // Sign-in was not successful
+      setLoading(false);
+      setRedirecting(false);
+      if (result?.error) {
+        setAuthErrorMessage(result.error);
       }
-    } catch (err: any) {
-      console.error("Direct fallback error:", err);
-      if (typeof window !== "undefined") {
-        window.location.href = "/dashboard";
+      if (result?.popupBlocked) {
+        setPopupBlocked(true);
       }
+    } catch (e: any) {
+      console.error("Google login error:", e);
+      setLoading(false);
+      setRedirecting(false);
+      setAuthErrorMessage(e?.message || "Sign-in failed. Please try again.");
     }
   };
 

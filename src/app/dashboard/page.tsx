@@ -83,10 +83,23 @@ export default function DashboardPage() {
       return;
     }
 
-    const isOwner = user?.email?.toLowerCase().trim() === "aibyshivai@gmail.com" || user?.email?.toLowerCase().includes("aibyshivai");
-    if (user && !isOwner && !userProfile?.username && !authLoading) {
-      router.push("/onboarding");
-      return;
+    if (user && !userProfile?.username) {
+      const isOwner = user.email?.toLowerCase().trim() === "aibyshivai@gmail.com" || user.email?.toLowerCase().includes("aibyshivai");
+      const fallbackUsername = isOwner
+        ? "aibyshivai"
+        : ((user.displayName || user.email?.split("@")[0] || "creator").toLowerCase().replace(/[^a-z0-9._]/g, "") || `creator_${user.uid.slice(0, 5)}`);
+      updateProfileState({
+        uid: user.uid,
+        displayName: isOwner ? "shivai" : (user.displayName || "Creator"),
+        username: fallbackUsername,
+        email: user.email || (isOwner ? "aibyshivai@gmail.com" : `${fallbackUsername}@gmail.com`),
+        photoURL: user.photoURL || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80",
+        bio: isOwner ? "Creator & Platform Super Admin @creativeedits.mov" : "Sharing my curated resources, links & guides.",
+        instagramUrl: isOwner ? "https://www.instagram.com/creativeedits.mov/" : `https://instagram.com/${fallbackUsername}`,
+        isAdmin: isOwner,
+        role: isOwner ? "admin" : "creator",
+        createdAt: new Date().toISOString(),
+      });
     }
 
     if (user?.uid) {
