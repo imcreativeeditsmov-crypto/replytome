@@ -73,7 +73,12 @@ export default function DashboardPage() {
     if (!authLoading && !user) {
       const cached = typeof window !== "undefined" ? localStorage.getItem("replyto_auth_user_v7") : null;
       if (!cached) {
-        router.push("/login?redirect=/dashboard");
+        const timer = setTimeout(() => {
+          if (!user && !localStorage.getItem("replyto_auth_user_v7")) {
+            router.push("/login?redirect=/dashboard");
+          }
+        }, 5000);
+        return () => clearTimeout(timer);
       }
       return;
     }

@@ -40,25 +40,30 @@ export default function OnboardingPage() {
 
   // Initialize from authenticated user or existing profile
   useEffect(() => {
-    if (!authLoading && !user) {
-      const cached = typeof window !== "undefined" ? localStorage.getItem("replyto_auth_user_v7") : null;
-      if (!cached) {
-        const timer = setTimeout(() => {
-          if (!user && !localStorage.getItem("replyto_auth_user_v7")) {
-            router.push("/login");
-          }
-        }, 3000);
-        return () => clearTimeout(timer);
-      }
+    let currentUser = user;
+    if (!currentUser && typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem("replyto_auth_user_v7");
+        if (raw) currentUser = JSON.parse(raw);
+      } catch {}
     }
 
-    if (user) {
+    if (!authLoading && !currentUser) {
+      const timer = setTimeout(() => {
+        if (!user && !localStorage.getItem("replyto_auth_user_v7")) {
+          router.push("/login");
+        }
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+
+    if (currentUser) {
       if (userProfile?.username) {
         router.push("/dashboard");
         return;
       }
 
-      PostService.getUserProfile(user.uid).then((existing) => {
+      PostService.getUserProfile(currentUser.uid).then((existing) => {
         if (existing && existing.username) {
           updateProfileState(existing);
           router.push("/dashboard");
@@ -66,20 +71,20 @@ export default function OnboardingPage() {
         }
       }).catch(() => {});
 
-      setDisplayName(user.displayName || "");
+      setDisplayName(currentUser.displayName || "");
       let claimed = "";
       if (typeof window !== "undefined") {
         try {
           claimed = localStorage.getItem("replyto_claimed_handle") || "";
         } catch {}
       }
-      let rawSlug = claimed || slugify(user.displayName || "creator").replace(/-/g, "_");
+      let rawSlug = claimed || slugify(currentUser.displayName || "creator").replace(/-/g, "_");
       if (!rawSlug || rawSlug === "new_creator" || rawSlug === "creator") {
         rawSlug = `creator_${Math.floor(100 + Math.random() * 900)}`;
       }
       setUsername(rawSlug);
       setInstagramUrl(`https://instagram.com/${rawSlug}`);
-      setPhotoURL(user.photoURL || "");
+      setPhotoURL(currentUser.photoURL || "");
       setImageError(false);
     }
   }, [user, userProfile, authLoading, router, updateProfileState]);
@@ -177,7 +182,14 @@ export default function OnboardingPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !usernameAvailable) return;
+    let currentUser = user;
+    if (!currentUser && typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem("replyto_auth_user_v7");
+        if (raw) currentUser = JSON.parse(raw);
+      } catch {}
+    }
+    if (!currentUser || !usernameAvailable) return;
 
     setSubmitting(true);
     try {
@@ -193,12 +205,12 @@ export default function OnboardingPage() {
       const cleanUsername = username.toLowerCase().trim();
 
       const profile: UserProfile = {
-        uid: user.uid,
+        uid: currentUser.uid,
         displayName: displayName.trim() || "Creator",
         username: cleanUsername,
         bio: bio.trim(),
         instagramUrl: finalIg,
-        email: user.email || undefined,
+        email: currentUser.email || undefined,
         photoURL:
           photoURL ||
           `https://api.dicebear.com/7.x/identicon/svg?seed=${cleanUsername}`,

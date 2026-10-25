@@ -386,12 +386,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const targetPath = options?.targetPath || "/dashboard";
 
-    const isMobile = typeof window !== "undefined" && (
-      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
-    );
-
-    // If explicit redirect requested or on mobile (mobile popups often lose opener communication):
-    if (options?.useRedirect || isMobile) {
+    // Only use redirect if explicitly requested by options:
+    if (options?.useRedirect) {
       try {
         if (typeof window !== "undefined") {
           sessionStorage.setItem(REDIRECT_PENDING_KEY, "true");

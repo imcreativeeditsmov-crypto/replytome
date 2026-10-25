@@ -26,7 +26,6 @@ export default function LoginPage() {
     userProfile,
     loading: authLoading,
     signInWithGoogle,
-    signInWithGoogleRedirect,
   } = useAuth();
 
   const [loading, setLoading] = useState(false);
@@ -53,13 +52,14 @@ export default function LoginPage() {
     }
   }, []);
 
-  // Auto-route if already logged in or returning from Google redirect
+  // Auto-route if already logged in
   useEffect(() => {
     if (!authLoading && user) {
+      setRedirecting(true);
       const dest = (!userProfile || !userProfile.username) ? "/onboarding" : redirectPath;
-      window.location.replace(dest);
+      router.push(dest);
     }
-  }, [user, userProfile, authLoading, redirectPath]);
+  }, [user, userProfile, authLoading, redirectPath, router]);
 
   const handleGoogleLogin = async () => {
     setLoading(true);
@@ -67,21 +67,20 @@ export default function LoginPage() {
     setPopupBlocked(false);
     try {
       const result = await signInWithGoogle({ targetPath: redirectPath });
-      if (result.redirecting) {
-        setRedirecting(true);
-        return;
-      }
       if (result.success && result.user) {
         setRedirecting(true);
         const dest = (!result.profile || !result.profile.username) ? "/onboarding" : redirectPath;
-        window.location.replace(dest);
+        router.push(dest);
+        // Safety timeout if router transition takes a moment
+        setTimeout(() => {
+          if (typeof window !== "undefined" && window.location.pathname === "/login") {
+            window.location.href = dest;
+          }
+        }, 1200);
         return;
       } else if (result.popupBlocked) {
         setPopupBlocked(true);
-      } else if (result.cancelled || result.error?.toLowerCase().includes("popup")) {
-        setPopupBlocked(true);
-        setAuthErrorMessage("Popup closed before completing. Tap 'Continue with Direct Redirect' below to sign in without popups.");
-      } else if (result.error) {
+      } else if (result.error && !result.cancelled && result.error !== "Popup closed") {
         if (result.error.toLowerCase().includes("unauthorized-domain") || result.error.toLowerCase().includes("unauthorized domain")) {
           setIsUnauthorizedDomain(true);
         } else {
@@ -90,32 +89,13 @@ export default function LoginPage() {
       }
     } catch (err: any) {
       console.error("Sign in failed:", err);
-      if (err?.code === "auth/popup-blocked" || err?.message?.toLowerCase().includes("popup")) {
-        setPopupBlocked(true);
-        setAuthErrorMessage("Popup was blocked or closed. Tap 'Continue with Direct Redirect' below.");
-      } else if (err?.code === "auth/unauthorized-domain" || err?.message?.toLowerCase().includes("unauthorized-domain")) {
+      if (err?.code === "auth/unauthorized-domain" || err?.message?.toLowerCase().includes("unauthorized-domain")) {
         setIsUnauthorizedDomain(true);
       } else {
         setAuthErrorMessage(err?.message || "Google sign-in failed. Please try again.");
       }
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleGoogleRedirectLogin = async () => {
-    setLoading(true);
-    setRedirecting(true);
-    setAuthErrorMessage(null);
-    try {
-      await signInWithGoogleRedirect({ targetPath: redirectPath });
-    } catch (err: any) {
-      console.error("Redirect sign-in failed:", err);
-      setRedirecting(false);
-      setLoading(false);
-      setAuthErrorMessage(
-        err?.message || "Failed to redirect to Google. Please check your internet connection."
-      );
     }
   };
 
@@ -263,19 +243,6 @@ export default function LoginPage() {
                   : "Continue with Google"}
               </span>
             </button>
-
-            {/* Direct Redirect Alternative for browsers that block or drop popups */}
-            <div className="pt-1">
-              <button
-                type="button"
-                onClick={handleGoogleRedirectLogin}
-                disabled={loading || redirecting}
-                className="w-full py-2.5 px-4 rounded-full bg-[#0D82ED]/10 hover:bg-[#0D82ED]/15 text-[#0D82ED] text-xs font-semibold border border-[#0D82ED]/20 transition-all flex items-center justify-center gap-2"
-              >
-                <span>Continue with Direct Redirect (No Popups)</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
 
             <div className="pt-2 text-center">
               <p className="text-[11px] text-[#86868B]">
