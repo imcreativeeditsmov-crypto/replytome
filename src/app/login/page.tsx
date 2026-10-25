@@ -33,6 +33,7 @@ export default function LoginPage() {
   const [redirecting, setRedirecting] = useState(false);
   const [popupBlocked, setPopupBlocked] = useState(false);
   const [isInApp, setIsInApp] = useState(false);
+  const [isUnauthorizedDomain, setIsUnauthorizedDomain] = useState(false);
   const [authErrorMessage, setAuthErrorMessage] = useState<string | null>(null);
 
   // If handle passed in query, persist for onboarding
@@ -84,6 +85,9 @@ export default function LoginPage() {
       } else if (result.error && !result.cancelled && result.error !== "Popup closed") {
         if (result.error.toLowerCase().includes("popup")) {
           setPopupBlocked(true);
+        } else if (result.error.toLowerCase().includes("unauthorized-domain") || result.error.toLowerCase().includes("unauthorized domain")) {
+          setIsUnauthorizedDomain(true);
+          setAuthErrorMessage("Unauthorized Domain in Firebase: Please add 'replytome-three.vercel.app' to Firebase Console Authorized Domains.");
         } else {
           setAuthErrorMessage(result.error);
         }
@@ -92,6 +96,9 @@ export default function LoginPage() {
       console.error("Sign in failed:", err);
       if (err?.code === "auth/popup-blocked" || err?.message?.toLowerCase().includes("popup")) {
         setPopupBlocked(true);
+      } else if (err?.code === "auth/unauthorized-domain" || err?.message?.toLowerCase().includes("unauthorized-domain")) {
+        setIsUnauthorizedDomain(true);
+        setAuthErrorMessage("Unauthorized Domain in Firebase: Please add 'replytome-three.vercel.app' to Firebase Console Authorized Domains.");
       } else {
         setAuthErrorMessage(err?.message || "Google sign-in failed. Please try again.");
       }
@@ -190,8 +197,32 @@ export default function LoginPage() {
             </div>
           )}
 
+          {/* Unauthorized Domain Guidance Card */}
+          {isUnauthorizedDomain && (
+            <div className="mb-6 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-amber-950 space-y-2.5">
+              <div className="font-bold flex items-center gap-1.5 text-amber-900">
+                <ShieldAlert className="w-4 h-4 text-amber-600" />
+                <span>1-Step Firebase Whitelist Required</span>
+              </div>
+              <p className="leading-relaxed text-[11px] text-amber-900/90">
+                Google Firebase requires you to whitelist your Vercel domain in your Firebase Console.
+              </p>
+              <div className="p-2 rounded-lg bg-white/80 border border-amber-200/80 font-mono text-[10px] select-all">
+                replytome-three.vercel.app
+              </div>
+              <a
+                href="https://console.firebase.google.com/project/replytome/authentication/settings"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs transition-colors shadow-sm"
+              >
+                <span>Add in Firebase Console ↗</span>
+              </a>
+            </div>
+          )}
+
           {/* Error Message */}
-          {authErrorMessage && (
+          {authErrorMessage && !isUnauthorizedDomain && (
             <div className="mb-6 p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-700 flex items-start gap-2">
               <ShieldAlert className="w-4 h-4 flex-shrink-0 mt-0.5" />
               <span>{authErrorMessage}</span>
