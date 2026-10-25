@@ -243,7 +243,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isDemoMode, setIsDemoMode] = useState(false);
 
   // Sync cache helpers
-  const persistSession = (authUser: AuthUser | null, profile: UserProfile | null) => {
+  const persistSession = (authUser: AuthUser | null, profile?: UserProfile | null) => {
     if (typeof window === "undefined") return;
     try {
       if (authUser) {
@@ -253,7 +253,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       if (profile) {
         localStorage.setItem(AUTH_PROFILE_KEY, JSON.stringify(profile));
-      } else {
+      } else if (authUser === null) {
         localStorage.removeItem(AUTH_PROFILE_KEY);
       }
     } catch (e) {
@@ -343,9 +343,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             photoURL: fbUser.photoURL,
           };
           setUser(authUser);
-          persistSession(authUser, null); // Always persist authUser immediately!
+          persistSession(authUser, undefined);
 
-          // Fetch profile safely without wiping existing data
+          // Fast-path: If platform owner aibyshivai@gmail.com, immediately set his owner profile
+          const isOwner =
+            fbUser.email?.toLowerCase().trim() === "aibyshivai@gmail.com" ||
+            fbUser.email?.toLowerCase().includes("aibyshivai");
+          if (isOwner) {
+            const ownerProfile: UserProfile = {
+              uid: fbUser.uid,
+              displayName: fbUser.displayName || "shivai",
+              username: "aibyshivai",
+              email: "aibyshivai@gmail.com",
+              bio: "Creator & Platform Super Admin @creativeedits.mov",
+              photoURL: fbUser.photoURL || "https://lh3.googleusercontent.com/a/ACg8ocJ9qWnDSojX5KvmBmcLNNTSuvefpZR2yQRh0rsX2DynIXdeo7I=s96-c",
+              instagramUrl: "https://www.instagram.com/creativeedits.mov/",
+              isAdmin: true,
+              role: "admin",
+              createdAt: new Date().toISOString(),
+            };
+            setUserProfile(ownerProfile);
+            persistSession(authUser, ownerProfile);
+            setLoading(false);
+            return;
+          }
+
+          // Fetch profile safely for regular creators
           try {
             const profile = await fetchUserProfileSafely(fbUser.uid, fbUser.email);
             if (profile) {
@@ -460,13 +483,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         err?.code === "auth/popup-closed-by-user" ||
         err?.code === "auth/cancelled-popup-request"
       ) {
-        setLoading(false);
-        return {
-          success: false,
-          user: null,
-          cancelled: true,
-          error: "Popup closed before sign in completed. Tap below to use direct redirect.",
-        };
+        // 1. Check if user was actually signed in before popup was dismissed
+        const current = authInstance.currentUser;
+        if (current) {
+          const authUser: AuthUser = {
+            uid: current.uid,
+            email: current.email,
+            displayName: current.displayName,
+            photoURL: current.photoURL,
+          };
+          setUser(authUser);
+          persistSession(authUser, undefined);
+          const profile = await fetchUserProfileSafely(current.uid, current.email);
+          if (profile) {
+            setUserProfile(profile);
+            persistSession(authUser, profile);
+          }
+          setLoading(false);
+          return { success: true, user: authUser, profile };
+        }
+
+        // 2. Automatically fall back to full-page Google redirect so login succeeds 100%
+        try {
+          if (typeof window !== "undefined") {
+            sessionStorage.setItem(REDIRECT_PENDING_KEY, "true");
+            sessionStorage.setItem(REDIRECT_TARGET_KEY, targetPath);
+          }
+          await signInWithRedirect(authInstance, provider);
+          return { success: true, user: null, redirecting: true };
+        } catch {
+          setLoading(false);
+          return {
+            success: false,
+            user: null,
+            cancelled: true,
+            error: "Sign in was interrupted. Please tap Continue with Google again.",
+          };
+        }
       }
 
       if (err?.code === "auth/popup-blocked") {

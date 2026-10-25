@@ -83,7 +83,8 @@ export default function DashboardPage() {
       return;
     }
 
-    if (user && !userProfile?.username && !authLoading) {
+    const isOwner = user?.email?.toLowerCase().trim() === "aibyshivai@gmail.com" || user?.email?.toLowerCase().includes("aibyshivai");
+    if (user && !isOwner && !userProfile?.username && !authLoading) {
       router.push("/onboarding");
       return;
     }

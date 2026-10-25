@@ -57,8 +57,18 @@ export default function LoginPage() {
   useEffect(() => {
     if (!authLoading && user) {
       setRedirecting(true);
-      const dest = (!userProfile || !userProfile.username) ? "/onboarding" : redirectPath;
+      const isOwner = user.email?.toLowerCase().trim() === "aibyshivai@gmail.com" || user.email?.toLowerCase().includes("aibyshivai");
+      const dest = isOwner
+        ? (redirectPath || "/dashboard")
+        : (!userProfile || !userProfile.username) ? "/onboarding" : redirectPath;
       router.push(dest);
+      if (typeof window !== "undefined") {
+        setTimeout(() => {
+          if (window.location.pathname === "/login") {
+            window.location.href = dest;
+          }
+        }, 400);
+      }
     }
   }, [user, userProfile, authLoading, redirectPath, router]);
 

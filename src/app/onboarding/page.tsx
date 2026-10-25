@@ -58,7 +58,8 @@ export default function OnboardingPage() {
     }
 
     if (currentUser) {
-      if (userProfile?.username) {
+      const isOwner = currentUser.email?.toLowerCase().trim() === "aibyshivai@gmail.com" || currentUser.email?.toLowerCase().includes("aibyshivai");
+      if (isOwner || userProfile?.username) {
         router.push("/dashboard");
         return;
       }
