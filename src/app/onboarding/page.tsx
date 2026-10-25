@@ -41,8 +41,12 @@ export default function OnboardingPage() {
   // Initialize from authenticated user or existing profile
   useEffect(() => {
     if (!authLoading && !user) {
-      router.push("/");
-      return;
+      const timer = setTimeout(() => {
+        if (!user) {
+          router.push("/login");
+        }
+      }, 1200);
+      return () => clearTimeout(timer);
     }
 
     if (user) {

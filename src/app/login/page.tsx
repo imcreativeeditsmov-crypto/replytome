@@ -56,13 +56,10 @@ export default function LoginPage() {
   // Auto-route if already logged in or returning from Google redirect
   useEffect(() => {
     if (!authLoading && user) {
-      if (!userProfile || !userProfile.username) {
-        router.push("/onboarding");
-      } else {
-        router.push(redirectPath);
-      }
+      const dest = (!userProfile || !userProfile.username) ? "/onboarding" : redirectPath;
+      window.location.replace(dest);
     }
-  }, [user, userProfile, authLoading, router, redirectPath]);
+  }, [user, userProfile, authLoading, redirectPath]);
 
   const handleGoogleLogin = async () => {
     setLoading(true);
@@ -75,11 +72,9 @@ export default function LoginPage() {
         return;
       }
       if (result.success && result.user) {
-        if (!result.profile || !result.profile.username) {
-          router.push("/onboarding");
-        } else {
-          router.push(redirectPath);
-        }
+        const dest = (!result.profile || !result.profile.username) ? "/onboarding" : redirectPath;
+        window.location.replace(dest);
+        return;
       } else if (result.popupBlocked) {
         setPopupBlocked(true);
       } else if (result.error && !result.cancelled && result.error !== "Popup closed") {
