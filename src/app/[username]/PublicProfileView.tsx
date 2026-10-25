@@ -13,6 +13,7 @@ import {
   ExternalLink,
   Layers,
   CheckCircle2,
+  FileText,
 } from "lucide-react";
 import { InstagramIcon } from "@/components/icons/InstagramIcon";
 import { motion } from "framer-motion";
@@ -63,15 +64,15 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-white selection:bg-[#0071E3]/20 flex flex-col justify-between">
-      <main className="w-full max-w-[480px] mx-auto px-4 py-10 sm:py-14 flex-1">
+    <div className="min-h-screen bg-[#FFFFFF] selection:bg-[#0071E3]/20 flex flex-col justify-between font-sans">
+      <main className="w-full max-w-[480px] mx-auto px-4 py-8 sm:py-12 flex-1">
         {/* Top bar with share */}
         <div className="flex items-center justify-between mb-8">
           <Link
             href="/"
-            className="flex items-center gap-1.5 text-xs font-semibold text-[#86868B] hover:text-[#1D1D1F] transition-colors"
+            className="flex items-center gap-1.5 text-xs font-medium text-[#86868B] hover:text-[#1D1D1F] transition-colors"
           >
-            <div className="w-5 h-5 rounded-md bg-[#0071E3] text-white flex items-center justify-center font-bold text-[10px]">
+            <div className="w-5 h-5 rounded-md bg-[#1D1D1F] text-white flex items-center justify-center font-semibold text-[10px]">
               R
             </div>
             <span>Replyto.me</span>
@@ -80,17 +81,17 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({
           <button
             onClick={handleShare}
             aria-label="Share creator profile"
-            className="w-9 h-9 rounded-full bg-[#F5F5F7] border border-[#E5E5EA] flex items-center justify-center text-[#1D1D1F] hover:bg-[#EBEBED] transition-all apple-btn"
+            className="w-8 h-8 rounded-full bg-[#F5F5F7] border border-black/[0.06] flex items-center justify-center text-[#1D1D1F] hover:bg-[#E8E8ED] transition-all apple-btn"
           >
-            <Share2 className="w-4 h-4 text-[#6E6E73]" />
+            <Share2 className="w-3.5 h-3.5 text-[#86868B]" />
           </button>
         </div>
 
         {/* Creator Bio Header */}
         <div className="text-center mb-8">
-          {/* Avatar with diffused glow */}
+          {/* Avatar with Apple subtle ring */}
           <div className="relative inline-block mb-3.5">
-            <div className="w-24 h-24 rounded-full overflow-hidden bg-[#F5F5F7] p-1 border border-[#E5E5EA] shadow-md mx-auto">
+            <div className="w-22 h-22 sm:w-24 sm:h-24 rounded-full overflow-hidden bg-[#F5F5F7] p-0.5 border border-black/[0.08] shadow-sm mx-auto">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={
@@ -109,18 +110,18 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({
           </div>
 
           <div className="flex items-center justify-center gap-1.5">
-            <h1 className="text-xl sm:text-2xl font-bold text-[#1D1D1F] tracking-tight">
+            <h1 className="text-xl sm:text-2xl font-semibold text-[#1D1D1F] tracking-tight">
               {user.displayName}
             </h1>
             <CheckCircle2 className="w-4 h-4 text-[#0071E3] fill-[#0071E3]/15 flex-shrink-0" />
           </div>
 
-          <p className="text-xs font-mono text-[#6E6E73] mt-0.5">
+          <p className="text-xs font-mono text-[#86868B] mt-0.5">
             @{user.username}
           </p>
 
           {user.bio && (
-            <p className="text-sm text-[#48484A] max-w-sm mx-auto mt-2.5 leading-relaxed font-normal">
+            <p className="text-xs sm:text-sm text-[#86868B] max-w-sm mx-auto mt-2.5 leading-relaxed font-normal">
               {user.bio}
             </p>
           )}
@@ -131,20 +132,26 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({
               href={user.instagramUrl || `https://www.instagram.com/${user.username}/`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#FD1D1D] via-[#E1306C] to-[#833AB4] text-white text-xs font-semibold shadow-sm hover:opacity-95 transition-all apple-btn"
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#1D1D1F] hover:bg-black text-white text-xs font-medium shadow-sm transition-all apple-btn"
             >
-              <InstagramIcon className="w-3.5 h-3.5" />
-              <span>Follow @{user.username}</span>
-              <ExternalLink className="w-3 h-3 opacity-80" />
+              <InstagramIcon className="w-3.5 h-3.5 text-[#E1306C]" />
+              <span>Instagram</span>
+              <ExternalLink className="w-3 h-3 opacity-60 ml-0.5" />
             </a>
           </div>
         </div>
 
+        {/* Section Title */}
+        <div className="flex items-center justify-between mb-3 px-1 text-xs text-[#86868B]">
+          <span className="font-semibold text-[#1D1D1F]">Resources & Links</span>
+          <span>{posts.length} {posts.length === 1 ? "item" : "items"}</span>
+        </div>
+
         {/* Published Posts Cards */}
-        <div className="space-y-3.5">
+        <div className="space-y-3">
           {posts.length === 0 ? (
-            <div className="p-8 rounded-3xl bg-[#F5F5F7] border border-[#E5E5EA] text-center">
-              <p className="text-xs text-[#6E6E73]">
+            <div className="p-8 rounded-2xl bg-[#F5F5F7] border border-black/[0.04] text-center">
+              <p className="text-xs text-[#86868B]">
                 No posts published yet. Check back soon!
               </p>
             </div>
@@ -158,16 +165,16 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({
               return (
                 <motion.div
                   key={post.id}
-                  initial={{ opacity: 0, y: 12 }}
+                  initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.05, duration: 0.25 }}
+                  transition={{ delay: idx * 0.04, duration: 0.25 }}
                 >
                   <Link
                     href={`/${user.username}/${post.slug}`}
-                    className="group relative flex items-center gap-3.5 p-3 rounded-2xl bg-white border border-[#E5E5EA] shadow-sm hover:shadow-md hover:border-[#0071E3]/30 transition-all apple-btn"
+                    className="group relative flex items-center gap-3.5 p-3 rounded-2xl bg-white border border-black/[0.06] shadow-[0_2px_8px_rgba(0,0,0,0.03)] hover:shadow-[0_6px_20px_rgba(0,0,0,0.06)] hover:border-black/[0.12] transition-all apple-btn"
                   >
                     {/* Thumbnail */}
-                    <div className="relative w-16 h-16 sm:w-18 sm:h-18 rounded-xl overflow-hidden bg-[#F5F5F7] flex-shrink-0 border border-[#E5E5EA]">
+                    <div className="relative w-15 h-15 sm:w-16 sm:h-16 rounded-xl overflow-hidden bg-[#F5F5F7] flex-shrink-0 border border-black/[0.04]">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={thumbnail}
@@ -175,7 +182,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
                       {post.gateEnabled && (
-                        <div className="absolute top-1 left-1 w-5 h-5 rounded-full bg-black/60 backdrop-blur-sm text-white flex items-center justify-center">
+                        <div className="absolute top-1 left-1 w-4.5 h-4.5 rounded-full bg-black/60 backdrop-blur-sm text-white flex items-center justify-center">
                           <Lock className="w-2.5 h-2.5" />
                         </div>
                       )}
@@ -183,33 +190,33 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({
 
                     {/* Post Content preview */}
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5 mb-0.5">
+                      <div className="flex items-center gap-1.5 mb-1">
                         {post.gateEnabled ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#0071E3] bg-[#0071E3]/10 px-2 py-0.5 rounded-full">
+                          <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#0071E3] bg-[#0071E3]/10 px-2 py-0.2 rounded-full">
                             <Lock className="w-2.5 h-2.5" />
                             <span>Comment to Unlock</span>
                           </span>
                         ) : (
-                          <span className="text-[10px] font-medium text-[#6E6E73] bg-[#F5F5F7] px-2 py-0.5 rounded-full">
+                          <span className="text-[10px] font-medium text-[#86868B] bg-[#F5F5F7] px-2 py-0.2 rounded-full">
                             Free Resource
                           </span>
                         )}
                       </div>
 
-                      <h2 className="text-sm font-semibold text-[#1D1D1F] truncate group-hover:text-[#0071E3] transition-colors leading-snug">
+                      <h2 className="text-xs sm:text-sm font-semibold text-[#1D1D1F] truncate group-hover:text-[#0071E3] transition-colors leading-snug">
                         {post.title}
                       </h2>
 
-                      <p className="text-[11px] text-[#86868B] mt-0.5">
+                      <p className="text-[11px] text-[#86868B] mt-0.5 truncate">
                         {post.gateEnabled
-                          ? `Comment "${post.gateKeyword || "KEYWORD"}" to unlock`
+                          ? `Comment "${post.gateKeyword || "KEYWORD"}" on Instagram`
                           : `${post.textBlocks?.length || 0} copyable sections`}
                       </p>
                     </div>
 
                     {/* Chevron */}
-                    <div className="w-7 h-7 rounded-full bg-[#F5F5F7] flex items-center justify-center text-[#86868B] group-hover:text-[#0071E3] group-hover:bg-[#0071E3]/10 transition-colors flex-shrink-0">
-                      <ChevronRight className="w-4 h-4" />
+                    <div className="w-6 h-6 rounded-full bg-[#F5F5F7] flex items-center justify-center text-[#86868B] group-hover:text-[#0071E3] group-hover:bg-[#0071E3]/10 transition-colors flex-shrink-0">
+                      <ChevronRight className="w-3.5 h-3.5" />
                     </div>
                   </Link>
                 </motion.div>
@@ -224,20 +231,17 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({
         </div>
       </main>
 
-      {/* Subtle Apple-style Footer */}
-      <footer className="w-full py-8 text-center border-t border-[#E5E5EA] bg-[#F5F5F7]">
+      {/* Apple-style Footer */}
+      <footer className="w-full py-8 text-center border-t border-black/[0.06] bg-[#F5F5F7] text-xs text-[#86868B]">
         <Link
           href="/"
-          className="inline-flex items-center gap-1.5 text-xs font-medium text-[#6E6E73] hover:text-[#1D1D1F] transition-colors"
+          className="inline-flex items-center gap-1.5 font-medium text-[#86868B] hover:text-[#1D1D1F] transition-colors"
         >
           <span>Powered by</span>
           <span className="font-semibold text-[#1D1D1F]">Replyto.me</span>
-          <span className="text-[10px] bg-white border border-[#E5E5EA] px-1.5 py-0.2 rounded-md text-[#86868B]">
-            Free
-          </span>
         </Link>
         <p className="text-[11px] text-[#86868B] mt-1">
-          Your link in bio, but smarter.
+          Smarter link in bio for Instagram Reel creators.
         </p>
       </footer>
 

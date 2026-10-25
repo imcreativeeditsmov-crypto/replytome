@@ -77,7 +77,6 @@ export const PostEditor: React.FC<PostEditorProps> = ({
   const [previewTab, setPreviewTab] = useState<"editor" | "preview">("editor");
   const [simulateLocked, setSimulateLocked] = useState(true);
 
-  // Handle title change and auto-slug
   const handleTitleChange = (val: string) => {
     setTitle(val);
     if (!slugEdited) {
@@ -85,7 +84,6 @@ export const PostEditor: React.FC<PostEditorProps> = ({
     }
   };
 
-  // Image Upload handler
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0 || !user) return;
@@ -118,7 +116,6 @@ export const PostEditor: React.FC<PostEditorProps> = ({
     setImages(copy);
   };
 
-  // Text block helpers
   const addTextBlock = () => {
     setTextBlocks((prev) => [
       ...prev,
@@ -151,7 +148,6 @@ export const PostEditor: React.FC<PostEditorProps> = ({
     setTextBlocks(copy);
   };
 
-  // Save Post
   const handleSave = async (customStatus?: PostStatus) => {
     if (!user) return;
     if (!title.trim()) {
@@ -164,7 +160,7 @@ export const PostEditor: React.FC<PostEditorProps> = ({
 
     setSaving(true);
     try {
-      const saved = await PostService.savePost({
+      await PostService.savePost({
         id: initialPost?.id,
         uid: user.uid,
         title: title.trim(),
@@ -193,35 +189,35 @@ export const PostEditor: React.FC<PostEditorProps> = ({
   const reelCheck = parseInstagramUrl(reelUrl);
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7] flex flex-col">
+    <div className="min-h-screen bg-[#F5F5F7] text-[#1D1D1F] flex flex-col font-sans selection:bg-[#0071E3]/15 selection:text-[#0071E3]">
       {/* Top action bar */}
-      <header className="sticky top-0 z-30 frosted-nav">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <header className="sticky top-0 z-30 apple-nav">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-13 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link
               href="/dashboard"
-              className="w-8 h-8 rounded-full bg-white border border-[#E5E5EA] flex items-center justify-center text-[#1D1D1F] hover:bg-[#F5F5F7] shadow-sm transition-all apple-btn"
+              className="w-7 h-7 rounded-full bg-white border border-black/[0.08] flex items-center justify-center text-[#1D1D1F] hover:bg-[#F5F5F7] transition-colors apple-btn"
             >
-              <ArrowLeft className="w-4 h-4" />
+              <ArrowLeft className="w-3.5 h-3.5" />
             </Link>
             <div>
-              <h1 className="text-sm sm:text-base font-bold text-[#1D1D1F] truncate max-w-[200px] sm:max-w-md">
-                {isEditing ? "Edit Post" : "Create New Post"}
+              <h1 className="text-xs sm:text-sm font-semibold text-[#1D1D1F] truncate max-w-[180px] sm:max-w-md">
+                {isEditing ? "Edit Resource" : "New Resource"}
               </h1>
-              <p className="text-[11px] text-[#6E6E73]">
-                {gateEnabled ? `🔒 Gate: ${gateKeyword || "KEYWORD"}` : "🔓 Public post"}
+              <p className="text-[10px] text-[#86868B] -mt-0.5">
+                {gateEnabled ? `🔒 Comment Gate: ${gateKeyword || "KEYWORD"}` : "🔓 Public resource"}
               </p>
             </div>
           </div>
 
           {/* Mobile Tab Switcher */}
-          <div className="flex lg:hidden bg-[#E5E5EA]/80 p-0.5 rounded-full text-xs font-semibold">
+          <div className="flex lg:hidden bg-black/[0.06] p-0.5 rounded-full text-xs font-medium">
             <button
               onClick={() => setPreviewTab("editor")}
               className={`px-3 py-1 rounded-full transition-all ${
                 previewTab === "editor"
-                  ? "bg-white text-[#1D1D1F] shadow-sm"
-                  : "text-[#6E6E73]"
+                  ? "bg-white text-[#1D1D1F] shadow-sm font-semibold"
+                  : "text-[#86868B]"
               }`}
             >
               Editor
@@ -230,32 +226,32 @@ export const PostEditor: React.FC<PostEditorProps> = ({
               onClick={() => setPreviewTab("preview")}
               className={`px-3 py-1 rounded-full transition-all ${
                 previewTab === "preview"
-                  ? "bg-white text-[#1D1D1F] shadow-sm"
-                  : "text-[#6E6E73]"
+                  ? "bg-white text-[#1D1D1F] shadow-sm font-semibold"
+                  : "text-[#86868B]"
               }`}
             >
-              Live Preview
+              Preview
             </button>
           </div>
 
-          {/* Desktop Save buttons */}
+          {/* Save buttons */}
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => handleSave("draft")}
               disabled={saving}
-              className="px-3.5 py-1.5 rounded-full bg-white border border-[#E5E5EA] text-xs font-semibold text-[#1D1D1F] hover:bg-[#F5F5F7] transition-all apple-btn"
+              className="apple-btn-secondary text-xs py-1.5 px-3"
             >
-              Save as Draft
+              Draft
             </button>
             <button
               type="button"
               onClick={() => handleSave("published")}
               disabled={saving}
-              className="flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-[#0071E3] hover:bg-[#0077ED] text-white text-xs font-semibold shadow-sm transition-all apple-btn disabled:opacity-50"
+              className="apple-btn-primary text-xs py-1.5 px-3.5 flex items-center gap-1.5 disabled:opacity-50"
             >
               {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-              <span>{isEditing ? "Update Post" : "Publish"}</span>
+              <span>{isEditing ? "Save" : "Publish"}</span>
             </button>
           </div>
         </div>
@@ -265,12 +261,12 @@ export const PostEditor: React.FC<PostEditorProps> = ({
       <div className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left Column: Form Editor */}
         <div
-          className={`lg:col-span-7 space-y-6 ${
+          className={`lg:col-span-7 space-y-5 ${
             previewTab === "preview" ? "hidden lg:block" : "block"
           }`}
         >
           {/* Post Title & Slug */}
-          <div className="bg-white rounded-3xl p-5 sm:p-6 border border-[#E5E5EA] shadow-sm space-y-4">
+          <div className="bg-white rounded-[24px] p-5 sm:p-6 border border-black/[0.06] shadow-sm space-y-4">
             <div>
               <label className="block text-xs font-semibold text-[#1D1D1F] mb-1.5">
                 Post Title
@@ -281,7 +277,7 @@ export const PostEditor: React.FC<PostEditorProps> = ({
                 value={title}
                 onChange={(e) => handleTitleChange(e.target.value)}
                 placeholder="e.g. 50+ System Prompts for ChatGPT & Claude"
-                className="w-full px-4 py-3 rounded-2xl bg-[#F5F5F7] border border-[#E5E5EA] text-sm font-medium text-[#1D1D1F] placeholder-[#86868B] focus:bg-white focus:border-[#0071E3] outline-none transition-all"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.06] text-xs font-medium text-[#1D1D1F] placeholder-[#A1A1A6] focus:bg-white focus:border-[#0071E3] outline-none transition-all"
               />
             </div>
 
@@ -289,7 +285,7 @@ export const PostEditor: React.FC<PostEditorProps> = ({
               <label className="block text-xs font-semibold text-[#1D1D1F] mb-1.5">
                 URL Slug
               </label>
-              <div className="flex items-center px-4 py-2.5 rounded-2xl bg-[#F5F5F7] border border-[#E5E5EA] text-xs font-mono text-[#6E6E73]">
+              <div className="flex items-center px-3.5 py-2 rounded-xl bg-[#F5F5F7] border border-black/[0.06] text-xs font-mono text-[#86868B]">
                 <span>/{userProfile?.username || "username"}/</span>
                 <input
                   type="text"
@@ -306,20 +302,20 @@ export const PostEditor: React.FC<PostEditorProps> = ({
           </div>
 
           {/* Instagram Reel Integration */}
-          <div className="bg-white rounded-3xl p-5 sm:p-6 border border-[#E5E5EA] shadow-sm space-y-3">
+          <div className="bg-white rounded-[24px] p-5 sm:p-6 border border-black/[0.06] shadow-sm space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <InstagramIcon className="w-4 h-4 text-[#E1306C]" />
+                <InstagramIcon className="w-3.5 h-3.5 text-[#E1306C]" />
                 <label className="text-xs font-semibold text-[#1D1D1F]">
                   Linked Instagram Reel URL
                 </label>
               </div>
               {reelUrl && (
                 <span
-                  className={`text-[11px] font-medium px-2 py-0.5 rounded-full ${
+                  className={`text-[10px] font-semibold px-2 py-0.2 rounded-full ${
                     reelCheck.isValid
-                      ? "bg-green-100 text-green-700"
-                      : "bg-red-100 text-red-600"
+                      ? "bg-[#34C759]/10 text-[#34C759]"
+                      : "bg-[#FF3B30]/10 text-[#FF3B30]"
                   }`}
                 >
                   {reelCheck.isValid ? "Valid Reel" : "Invalid URL"}
@@ -332,7 +328,7 @@ export const PostEditor: React.FC<PostEditorProps> = ({
               value={reelUrl}
               onChange={(e) => setReelUrl(e.target.value)}
               placeholder="https://www.instagram.com/reel/C123456/..."
-              className="w-full px-4 py-3 rounded-2xl bg-[#F5F5F7] border border-[#E5E5EA] text-xs font-mono text-[#1D1D1F] placeholder-[#86868B] focus:bg-white focus:border-[#0071E3] outline-none transition-all"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.06] text-xs font-mono text-[#1D1D1F] placeholder-[#A1A1A6] focus:bg-white focus:border-[#0071E3] outline-none transition-all"
             />
 
             {reelUrl && reelCheck.isValid && (
@@ -347,24 +343,24 @@ export const PostEditor: React.FC<PostEditorProps> = ({
           </div>
 
           {/* Comment Gate Settings Card */}
-          <div className="bg-white rounded-3xl p-5 sm:p-6 border border-[#E5E5EA] shadow-sm space-y-5">
+          <div className="bg-white rounded-[24px] p-5 sm:p-6 border border-black/[0.06] shadow-sm space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div
-                  className={`w-9 h-9 rounded-xl flex items-center justify-center transition-colors ${
+                  className={`w-8 h-8 rounded-xl flex items-center justify-center transition-colors ${
                     gateEnabled
                       ? "bg-[#0071E3] text-white"
-                      : "bg-[#F5F5F7] text-[#6E6E73] border border-[#E5E5EA]"
+                      : "bg-[#F5F5F7] text-[#86868B] border border-black/[0.06]"
                   }`}
                 >
                   <Lock className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-[#1D1D1F]">
+                  <h3 className="text-xs sm:text-sm font-semibold text-[#1D1D1F]">
                     Comment to Unlock (Comment Gate)
                   </h3>
-                  <p className="text-xs text-[#6E6E73]">
-                    Require visitors to comment on your Reel before revealing content
+                  <p className="text-[11px] text-[#86868B]">
+                    Require viewers to comment a keyword on your Reel
                   </p>
                 </div>
               </div>
@@ -373,12 +369,12 @@ export const PostEditor: React.FC<PostEditorProps> = ({
               <button
                 type="button"
                 onClick={() => setGateEnabled(!gateEnabled)}
-                className={`w-12 h-7 rounded-full p-1 transition-colors ${
+                className={`w-11 h-6 rounded-full p-0.5 transition-colors ${
                   gateEnabled ? "bg-[#34C759]" : "bg-[#E5E5EA]"
                 }`}
               >
                 <div
-                  className={`w-5 h-5 rounded-full bg-white shadow-md transform transition-transform ${
+                  className={`w-5 h-5 rounded-full bg-white shadow-sm transform transition-transform ${
                     gateEnabled ? "translate-x-5" : "translate-x-0"
                   }`}
                 />
@@ -386,62 +382,57 @@ export const PostEditor: React.FC<PostEditorProps> = ({
             </div>
 
             {gateEnabled && (
-              <div className="space-y-4 pt-4 border-t border-[#E5E5EA] animate-in fade-in duration-200">
-                {/* Gate Keyword */}
+              <div className="space-y-4 pt-4 border-t border-black/[0.06] animate-in fade-in duration-200">
                 <div>
-                  <label className="block text-xs font-semibold text-[#1D1D1F] mb-1.5">
-                    Unlock Keyword (Instagram comment word)
+                  <label className="block text-xs font-semibold text-[#1D1D1F] mb-1">
+                    Trigger Keyword
                   </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      required
-                      value={gateKeyword}
-                      onChange={(e) => setGateKeyword(e.target.value.toUpperCase())}
-                      placeholder="e.g. PROMPT, LINK, SEND"
-                      className="w-full px-4 py-3 rounded-2xl bg-[#F5F5F7] border border-[#E5E5EA] text-sm font-mono font-bold text-[#0071E3] uppercase tracking-wider focus:bg-white focus:border-[#0071E3] outline-none"
-                    />
-                  </div>
-                  <p className="text-[11px] text-[#86868B] mt-1">
-                    Visitors will be instructed to comment this word on your linked Reel.
+                  <input
+                    type="text"
+                    required
+                    value={gateKeyword}
+                    onChange={(e) => setGateKeyword(e.target.value.toUpperCase())}
+                    placeholder="e.g. PROMPT, CAFE, WORKFLOW"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-[#F5F5F7] border border-black/[0.06] text-xs font-mono font-bold text-[#0071E3] uppercase tracking-wider focus:bg-white focus:border-[#0071E3] outline-none"
+                  />
+                  <p className="text-[10px] text-[#86868B] mt-1">
+                    Viewers must comment this word on your Reel to unlock the resource.
                   </p>
                 </div>
 
-                {/* Custom Lock Message */}
                 <div>
-                  <label className="block text-xs font-semibold text-[#1D1D1F] mb-1.5">
-                    Lock Screen Message
+                  <label className="block text-xs font-semibold text-[#1D1D1F] mb-1">
+                    Lock Message
                   </label>
                   <textarea
                     rows={2}
                     value={gateMessage}
                     onChange={(e) => setGateMessage(e.target.value)}
                     placeholder="e.g. Comment PROMPT on my reel to unlock the full list..."
-                    className="w-full px-4 py-2.5 rounded-2xl bg-[#F5F5F7] border border-[#E5E5EA] text-xs text-[#1D1D1F] focus:bg-white focus:border-[#0071E3] outline-none resize-none"
+                    className="w-full px-3.5 py-2 rounded-xl bg-[#F5F5F7] border border-black/[0.06] text-xs text-[#1D1D1F] focus:bg-white focus:border-[#0071E3] outline-none resize-none"
                   />
                 </div>
 
-                {/* Lock Scope Selector */}
                 <div>
-                  <label className="block text-xs font-semibold text-[#1D1D1F] mb-2">
-                    What should be locked?
+                  <label className="block text-xs font-semibold text-[#1D1D1F] mb-1.5">
+                    Gate Scope
                   </label>
                   <div className="grid grid-cols-3 gap-2">
                     {(
                       [
-                        { id: "text_blocks", label: "Text Blocks Only" },
-                        { id: "images", label: "Images Only" },
-                        { id: "both", label: "Both" },
+                        { id: "text_blocks", label: "Text Blocks" },
+                        { id: "images", label: "Pictures" },
+                        { id: "both", label: "Everything" },
                       ] as const
                     ).map((scope) => (
                       <button
                         key={scope.id}
                         type="button"
                         onClick={() => setGateScope(scope.id)}
-                        className={`py-2 px-3 rounded-xl text-xs font-medium border text-center transition-all ${
+                        className={`py-1.5 px-2.5 rounded-xl text-xs font-medium border text-center transition-all ${
                           gateScope === scope.id
                             ? "bg-[#0071E3] text-white border-[#0071E3] shadow-sm"
-                            : "bg-[#F5F5F7] text-[#1D1D1F] border-[#E5E5EA] hover:bg-[#EBEBED]"
+                            : "bg-[#F5F5F7] text-[#1D1D1F] border-black/[0.06] hover:bg-[#E8E8ED]"
                         }`}
                       >
                         {scope.label}
@@ -454,18 +445,18 @@ export const PostEditor: React.FC<PostEditorProps> = ({
           </div>
 
           {/* Pictures Carousel Uploader */}
-          <div className="bg-white rounded-3xl p-5 sm:p-6 border border-[#E5E5EA] shadow-sm space-y-4">
+          <div className="bg-white rounded-[24px] p-5 sm:p-6 border border-black/[0.06] shadow-sm space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-bold text-[#1D1D1F]">
-                  Post Pictures (Carousel)
+                <h3 className="text-xs sm:text-sm font-semibold text-[#1D1D1F]">
+                  Post Media (Carousel)
                 </h3>
-                <p className="text-xs text-[#6E6E73]">
-                  Upload multiple pictures visitors can swipe through
+                <p className="text-[11px] text-[#86868B]">
+                  Images viewers can swipe through
                 </p>
               </div>
-              <label className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#F5F5F7] hover:bg-[#EBEBED] text-[#1D1D1F] border border-[#E5E5EA] text-xs font-semibold cursor-pointer apple-btn">
-                <Upload className="w-3.5 h-3.5 text-[#6E6E73]" />
+              <label className="apple-btn-secondary text-xs py-1 px-3 cursor-pointer">
+                <Upload className="w-3.5 h-3.5 text-[#86868B]" />
                 <span>Upload Photos</span>
                 <input
                   type="file"
@@ -477,13 +468,12 @@ export const PostEditor: React.FC<PostEditorProps> = ({
               </label>
             </div>
 
-            {/* Image Preview Grid */}
             {images.length > 0 ? (
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 {images.map((img, i) => (
                   <div
                     key={i}
-                    className="relative group aspect-square rounded-2xl overflow-hidden bg-[#F5F5F7] border border-[#E5E5EA]"
+                    className="relative group aspect-square rounded-xl overflow-hidden bg-[#F5F5F7] border border-black/[0.06]"
                   >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
@@ -499,16 +489,16 @@ export const PostEditor: React.FC<PostEditorProps> = ({
                           className="p-1 rounded bg-white text-black hover:bg-zinc-100"
                           title="Move left"
                         >
-                          <ChevronUp className="w-3.5 h-3.5 -rotate-90" />
+                          <ChevronUp className="w-3 h-3 -rotate-90" />
                         </button>
                       )}
                       <button
                         type="button"
                         onClick={() => removeImage(i)}
-                        className="p-1 rounded bg-red-600 text-white hover:bg-red-700"
+                        className="p-1 rounded bg-[#FF3B30] text-white hover:bg-red-600"
                         title="Delete"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Trash2 className="w-3 h-3" />
                       </button>
                       {i < images.length - 1 && (
                         <button
@@ -517,12 +507,12 @@ export const PostEditor: React.FC<PostEditorProps> = ({
                           className="p-1 rounded bg-white text-black hover:bg-zinc-100"
                           title="Move right"
                         >
-                          <ChevronDown className="w-3.5 h-3.5 -rotate-90" />
+                          <ChevronDown className="w-3 h-3 -rotate-90" />
                         </button>
                       )}
                     </div>
                     {i === 0 && (
-                      <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded bg-black/60 text-white text-[10px] font-medium backdrop-blur-sm">
+                      <span className="absolute top-1.5 left-1.5 px-1.5 py-0.2 rounded bg-black/60 text-white text-[9px] font-medium backdrop-blur-sm">
                         Cover
                       </span>
                     )}
@@ -530,13 +520,13 @@ export const PostEditor: React.FC<PostEditorProps> = ({
                 ))}
               </div>
             ) : (
-              <label className="border-2 border-dashed border-[#E5E5EA] rounded-2xl p-8 flex flex-col items-center justify-center text-center cursor-pointer hover:border-[#0071E3]/40 transition-colors">
-                <ImageIcon className="w-8 h-8 text-[#86868B] mb-2" />
+              <label className="border border-dashed border-black/[0.12] rounded-2xl p-6 flex flex-col items-center justify-center text-center cursor-pointer hover:border-[#0071E3] transition-colors">
+                <ImageIcon className="w-6 h-6 text-[#86868B] mb-1.5" />
                 <p className="text-xs font-semibold text-[#1D1D1F]">
-                  Drag and drop or click to upload pictures
+                  Upload carousel photos
                 </p>
-                <p className="text-[11px] text-[#86868B] mt-0.5">
-                  Supports JPG, PNG, WEBP
+                <p className="text-[10px] text-[#86868B] mt-0.5">
+                  JPG, PNG, WEBP supported
                 </p>
                 <input
                   type="file"
@@ -554,82 +544,51 @@ export const PostEditor: React.FC<PostEditorProps> = ({
                 <span>Uploading pictures...</span>
               </div>
             )}
-
-            {/* Allow Image Download Option */}
-            <div className="flex items-center justify-between pt-3 border-t border-[#E5E5EA]">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-[#0071E3]/10 text-[#0071E3] flex items-center justify-center flex-shrink-0">
-                  <Download className="w-4 h-4" />
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-[#1D1D1F]">
-                    Allow visitors to download pictures
-                  </p>
-                  <p className="text-[11px] text-[#6E6E73]">
-                    Visitors can save individual photos or download all slides once unlocked
-                  </p>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setAllowDownload(!allowDownload)}
-                className={`w-11 h-6 rounded-full p-0.5 transition-colors flex-shrink-0 ${
-                  allowDownload ? "bg-[#34C759]" : "bg-[#E5E5EA]"
-                }`}
-              >
-                <div
-                  className={`w-5 h-5 rounded-full bg-white shadow-md transform transition-transform ${
-                    allowDownload ? "translate-x-5" : "translate-x-0"
-                  }`}
-                />
-              </button>
-            </div>
           </div>
 
           {/* Copyable Text Blocks Section */}
-          <div className="bg-white rounded-3xl p-5 sm:p-6 border border-[#E5E5EA] shadow-sm space-y-4">
+          <div className="bg-white rounded-[24px] p-5 sm:p-6 border border-black/[0.06] shadow-sm space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-bold text-[#1D1D1F]">
+                <h3 className="text-xs sm:text-sm font-semibold text-[#1D1D1F]">
                   Copyable Text Blocks
                 </h3>
-                <p className="text-xs text-[#6E6E73]">
-                  Each block gets a dedicated one-tap &quot;Copy&quot; button on your public page
+                <p className="text-[11px] text-[#86868B]">
+                  Dedicated one-tap &quot;Copy&quot; buttons for visitors
                 </p>
               </div>
 
               <button
                 type="button"
                 onClick={addTextBlock}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#0071E3] text-white text-xs font-semibold hover:bg-[#0077ED] transition-all apple-btn shadow-sm"
+                className="apple-btn-secondary text-xs py-1 px-3"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>Add Text Block</span>
+                <span>Add Block</span>
               </button>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3">
               {textBlocks.map((block, index) => (
                 <div
                   key={block.id}
-                  className="p-4 rounded-2xl bg-[#F5F5F7] border border-[#E5E5EA] space-y-3"
+                  className="p-3.5 rounded-xl bg-[#F5F5F7] border border-black/[0.06] space-y-2.5"
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 flex-1 mr-2">
-                      <span className="w-5 h-5 rounded-full bg-[#1D1D1F] text-white text-[10px] font-semibold flex items-center justify-center">
+                      <span className="w-4.5 h-4.5 rounded-full bg-[#1D1D1F] text-white text-[9px] font-semibold flex items-center justify-center">
                         {index + 1}
                       </span>
                       <input
                         type="text"
                         value={block.title || ""}
                         onChange={(e) => updateTextBlock(index, "title", e.target.value)}
-                        placeholder={`Block #${index + 1} Title (Optional)`}
+                        placeholder={`Block #${index + 1} Title`}
                         className="flex-1 bg-transparent text-xs font-semibold text-[#1D1D1F] outline-none border-b border-transparent focus:border-[#0071E3]"
                       />
                     </div>
 
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-0.5">
                       <button
                         type="button"
                         onClick={() => moveTextBlock(index, "up")}
@@ -637,7 +596,7 @@ export const PostEditor: React.FC<PostEditorProps> = ({
                         aria-label="Move block up"
                         className="p-1 text-[#86868B] hover:text-[#1D1D1F] disabled:opacity-20"
                       >
-                        <ChevronUp className="w-3.5 h-3.5" />
+                        <ChevronUp className="w-3 h-3" />
                       </button>
                       <button
                         type="button"
@@ -646,26 +605,26 @@ export const PostEditor: React.FC<PostEditorProps> = ({
                         aria-label="Move block down"
                         className="p-1 text-[#86868B] hover:text-[#1D1D1F] disabled:opacity-20"
                       >
-                        <ChevronDown className="w-3.5 h-3.5" />
+                        <ChevronDown className="w-3 h-3" />
                       </button>
                       <button
                         type="button"
                         onClick={() => removeTextBlock(index)}
                         disabled={textBlocks.length <= 1}
                         aria-label="Delete block"
-                        className="p-1 text-[#FF3B30] hover:bg-red-100 rounded disabled:opacity-20"
+                        className="p-1 text-[#86868B] hover:text-[#FF3B30] disabled:opacity-20"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Trash2 className="w-3 h-3" />
                       </button>
                     </div>
                   </div>
 
                   <textarea
-                    rows={4}
+                    rows={3}
                     value={block.text}
                     onChange={(e) => updateTextBlock(index, "text", e.target.value)}
                     placeholder="Paste the prompt, links, markdown, code, or guide here..."
-                    className="w-full p-3 rounded-xl bg-white border border-[#E5E5EA] text-xs font-sans text-[#1D1D1F] focus:border-[#0071E3] outline-none transition-all leading-relaxed"
+                    className="w-full p-2.5 rounded-lg bg-white border border-black/[0.06] text-xs font-mono text-[#1D1D1F] focus:border-[#0071E3] outline-none transition-all leading-relaxed"
                   />
                 </div>
               ))}
@@ -675,19 +634,19 @@ export const PostEditor: React.FC<PostEditorProps> = ({
 
         {/* Right Column: Live Mobile Preview */}
         <div
-          className={`lg:col-span-5 sticky top-24 ${
+          className={`lg:col-span-5 sticky top-20 ${
             previewTab === "editor" ? "hidden lg:block" : "block"
           }`}
         >
           <div className="flex items-center justify-between mb-3 px-1">
-            <span className="text-xs font-bold uppercase tracking-wider text-[#86868B]">
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-[#86868B]">
               Real-Time Mobile Preview
             </span>
             {gateEnabled && (
               <button
                 type="button"
                 onClick={() => setSimulateLocked(!simulateLocked)}
-                className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border transition-all ${
+                className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border transition-all ${
                   simulateLocked
                     ? "bg-[#0071E3]/10 text-[#0071E3] border-[#0071E3]/20"
                     : "bg-[#34C759]/10 text-[#34C759] border-[#34C759]/20"
@@ -702,20 +661,17 @@ export const PostEditor: React.FC<PostEditorProps> = ({
             urlBarText={`replyto.me/${userProfile?.username || "creator"}/${slug || "preview"}`}
           >
             <div className="p-4 space-y-4 pb-12">
-              {/* Post Title */}
               <div>
-                <h2 className="text-lg font-bold text-[#1D1D1F] leading-tight">
-                  {title || "Untitled Post"}
+                <h2 className="text-base font-semibold text-[#1D1D1F] leading-tight">
+                  {title || "Untitled Resource"}
                 </h2>
-                <p className="text-[11px] text-[#6E6E73] mt-1">
+                <p className="text-[10px] text-[#86868B] mt-0.5">
                   by {userProfile?.displayName || "You"}
                 </p>
               </div>
 
-              {/* Linked Reel */}
               {reelUrl && <ReelPreviewCard reelUrl={reelUrl} />}
 
-              {/* Carousel */}
               {images.length > 0 && (
                 <Carousel
                   images={images}
@@ -730,26 +686,25 @@ export const PostEditor: React.FC<PostEditorProps> = ({
                 />
               )}
 
-              {/* Gate or Text Blocks */}
               {gateEnabled &&
               simulateLocked &&
               (gateScope === "text_blocks" || gateScope === "both") ? (
-                <div className="p-4 rounded-2xl bg-white border border-[#E5E5EA] shadow-sm text-center">
-                  <div className="w-10 h-10 rounded-xl bg-[#0071E3]/10 text-[#0071E3] flex items-center justify-center mx-auto mb-2">
-                    <Lock className="w-5 h-5" />
+                <div className="p-4 rounded-2xl bg-white border border-black/[0.06] shadow-sm text-center">
+                  <div className="w-8 h-8 rounded-xl bg-[#0071E3]/10 text-[#0071E3] flex items-center justify-center mx-auto mb-2">
+                    <Lock className="w-4 h-4" />
                   </div>
-                  <h4 className="text-xs font-bold text-[#1D1D1F]">
+                  <h4 className="text-xs font-semibold text-[#1D1D1F]">
                     Comment to Unlock Content
                   </h4>
-                  <p className="text-[11px] text-[#6E6E73] mt-1 mb-3">
+                  <p className="text-[10px] text-[#86868B] mt-1 mb-2">
                     {gateMessage}
                   </p>
-                  <div className="p-2 bg-[#F5F5F7] rounded-xl font-mono text-xs font-bold text-[#0071E3]">
+                  <div className="p-1.5 bg-[#F5F5F7] rounded-lg font-mono text-[11px] font-bold text-[#0071E3]">
                     Keyword: {gateKeyword}
                   </div>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-2.5">
                   {textBlocks.map((b, i) => (
                     <TextBlockCard key={b.id} block={b} index={i} />
                   ))}

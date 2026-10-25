@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Sparkles, ArrowRight, CheckCircle2, ShieldCheck, Zap } from "lucide-react";
+import { Sparkles, ArrowRight, CheckCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface BeACreatorCTAProps {
@@ -27,80 +27,67 @@ export const BeACreatorCTA: React.FC<BeACreatorCTAProps> = ({ className = "", so
 
   return (
     <motion.section
-      initial={{ opacity: 0, y: 16 }}
+      initial={{ opacity: 0, y: 12 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      transition={{ duration: 0.35 }}
-      className={`relative overflow-hidden rounded-[28px] border border-[#E5E5EA] bg-gradient-to-b from-white via-[#FAFAFC] to-[#F5F5F7] p-6 sm:p-8 shadow-[0_10px_36px_rgba(0,0,0,0.05)] text-center ${className}`}
+      transition={{ duration: 0.3 }}
+      className={`relative overflow-hidden rounded-[24px] border border-black/[0.06] bg-[#F5F5F7] p-6 sm:p-8 text-center ${className}`}
     >
-      {/* Decorative ambient background blur */}
-      <div className="absolute -top-16 -right-16 w-36 h-36 bg-[#0071E3]/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-16 -left-16 w-36 h-36 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
-
       {/* Pill Badge */}
-      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#0071E3]/10 text-[#0071E3] text-[11px] font-bold tracking-wide uppercase mb-3">
-        <Sparkles className="w-3.5 h-3.5" />
-        <span>Be a Creator on Replyto.me</span>
+      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-black/[0.06] text-[#0D82ED] text-[10px] font-bold tracking-wider uppercase mb-2.5 shadow-sm">
+        <Sparkles className="w-3 h-3 fill-[#0D82ED]" />
+        <span>Replyto.me for Creators</span>
       </div>
 
       {/* Headline */}
-      <h3 className="text-xl sm:text-2xl font-bold tracking-tight text-[#1D1D1F]">
+      <h3 className="text-lg sm:text-xl font-bold tracking-tight text-[#0A0A0A]">
         Create your own link in bio
       </h3>
 
       {/* Subtitle */}
-      <p className="text-xs sm:text-sm text-[#6E6E73] max-w-md mx-auto mt-2 leading-relaxed">
-        Lock prompts, guides & files behind Instagram Reel comments. Convert viewers into loyal followers with zero effort.
+      <p className="text-xs text-[#7E828A] max-w-sm mx-auto mt-1 leading-relaxed">
+        Gate prompts, Notion guides & files behind Instagram Reel comments in 30 seconds.
       </p>
 
       {/* Interactive Handle Claim Form */}
-      <form onSubmit={handleSubmit} className="mt-5 max-w-md mx-auto">
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 p-1.5 bg-white rounded-2xl border border-[#E5E5EA] shadow-sm focus-within:border-[#0071E3] focus-within:ring-2 focus-within:ring-[#0071E3]/20 transition-all">
-          <div className="flex items-center pl-3.5 text-xs text-[#86868B] font-mono select-none">
+      <form onSubmit={handleSubmit} className="mt-4 max-w-sm mx-auto">
+        <div className="flex items-center p-1 bg-white rounded-full border border-black/[0.08] shadow-sm focus-within:border-[#0D82ED] transition-all">
+          <div className="flex items-center pl-3 text-xs text-[#7E828A] font-mono select-none flex-1 min-w-0">
             <span>replyto.me/</span>
             <input
               type="text"
               value={handle}
               onChange={(e) => setHandle(e.target.value.toLowerCase().replace(/\s+/g, ""))}
               placeholder="yourname"
-              className="w-full sm:w-32 bg-transparent text-xs text-[#1D1D1F] font-mono outline-none pl-0.5 placeholder:text-[#AEAEB2]"
+              className="w-full bg-transparent text-xs text-[#0A0A0A] font-mono font-bold outline-none pl-0.5 placeholder:text-[#A1A1A6]"
             />
           </div>
 
           <button
             type="submit"
-            className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#0071E3] hover:bg-[#0077ED] text-white text-xs font-semibold shadow-[0_2px_10px_rgba(0,113,227,0.3)] transition-all apple-btn whitespace-nowrap"
+            className="btn-lime text-xs py-1.5 px-3.5 whitespace-nowrap shadow-none"
           >
-            <span>Claim Free Link</span>
-            <ArrowRight className="w-3.5 h-3.5" />
+            <span>Claim</span>
+            <ArrowRight className="w-3 h-3 stroke-[2.5]" />
           </button>
         </div>
       </form>
 
-      {/* Quick Google Sign In Alternate */}
-      <div className="mt-3.5 flex items-center justify-center gap-2">
-        <span className="text-[11px] text-[#86868B]">Already have an account?</span>
-        <Link
-          href="/login"
-          className="text-[11px] font-semibold text-[#0071E3] hover:underline"
-        >
-          Sign in →
-        </Link>
-      </div>
-
       {/* Value Badges */}
-      <div className="mt-6 pt-5 border-t border-[#E5E5EA] flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[11px] text-[#6E6E73]">
-        <div className="flex items-center gap-1.5">
+      <div className="mt-5 pt-4 border-t border-black/[0.06] flex items-center justify-center gap-4 text-[11px] text-[#86868B]">
+        <div className="flex items-center gap-1">
           <CheckCircle2 className="w-3.5 h-3.5 text-[#34C759]" />
-          <span>100% Free Forever</span>
+          <span>Free Forever</span>
         </div>
-        <div className="flex items-center gap-1.5">
+        <span>•</span>
+        <div className="flex items-center gap-1">
           <CheckCircle2 className="w-3.5 h-3.5 text-[#34C759]" />
-          <span>Reel Comment Lock</span>
+          <span>No DM limits</span>
         </div>
-        <div className="flex items-center gap-1.5">
+        <span>•</span>
+        <div className="flex items-center gap-1">
           <CheckCircle2 className="w-3.5 h-3.5 text-[#34C759]" />
-          <span>Instant Google Setup</span>
+          <span>Instant setup</span>
         </div>
       </div>
     </motion.section>

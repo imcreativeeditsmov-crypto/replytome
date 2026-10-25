@@ -1,123 +1,265 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
-import { InstagramIcon } from "@/components/icons/InstagramIcon";
+import { useRouter, usePathname } from "next/navigation";
 import {
-  Plus,
-  LayoutDashboard,
   ExternalLink,
   Sparkles,
+  LogOut,
+  Menu,
+  X,
+  ChevronDown,
+  LayoutDashboard,
+  ArrowUpRight,
 } from "lucide-react";
 
 export const Navbar: React.FC = () => {
-  const { userProfile, isAdmin } = useAuth();
-  const displayName = userProfile?.displayName || "AI by Shivai";
-  const username = userProfile?.username || "aibyshivai";
+  const router = useRouter();
+  const pathname = usePathname();
+  const { user, userProfile, isAdmin, signOut } = useAuth();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  const isHome = pathname === "/";
+  const displayName = userProfile?.displayName || "Creator";
   const avatarUrl = userProfile?.photoURL || "/avatar.png";
-  const instagramUrl =
-    userProfile?.instagramUrl || `https://www.instagram.com/${username}/`;
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 30);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  // On home page top, navbar is translucent white-text over sky blue. On scroll or inner pages, crisp glass.
+  const isTransparent = isHome && !scrolled;
 
   return (
-    <header className="sticky top-0 z-40 w-full frosted-nav transition-all">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
-        {/* Brand: Creator Avatar + Name */}
+    <header
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        isTransparent
+          ? "bg-transparent py-4 text-white"
+          : "bg-white/90 backdrop-blur-md border-b border-black/[0.06] py-3 text-[#0A0A0A] shadow-sm"
+      }`}
+    >
+      <div className="max-w-7xl mx-auto px-6 sm:px-8 flex items-center justify-between">
+        {/* Brand: Geometric origami-style logo matching Aeline */}
         <Link href="/" className="flex items-center gap-2.5 group">
-          <div className="w-9 h-9 rounded-full overflow-hidden bg-[#F5F5F7] border border-[#E5E5EA] shadow-sm group-hover:scale-105 transition-transform flex-shrink-0">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={avatarUrl}
-              alt={displayName}
-              referrerPolicy="no-referrer"
-              crossOrigin="anonymous"
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = "/avatar.png";
-              }}
-            />
+          <div
+            className={`w-7 h-7 rounded-lg flex items-center justify-center transition-transform group-hover:scale-105 ${
+              isTransparent
+                ? "bg-white text-[#0D82ED]"
+                : "bg-[#0D82ED] text-white"
+            }`}
+          >
+            {/* Origami delta geometric icon */}
+            <svg
+              className="w-4 h-4 fill-current"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path d="M12 2L2 22h20L12 2zm0 5l6.5 13H5.5L12 7z" />
+            </svg>
           </div>
-          <div className="flex flex-col">
-            <span className="font-bold text-sm tracking-tight text-[#1D1D1F] flex items-center gap-1.5">
-              <span>{displayName}</span>
-              <span className="text-[10px] font-semibold bg-[#0071E3]/10 text-[#0071E3] px-1.5 py-0.2 rounded-full">
-                {isAdmin ? "Admin" : "Creator"}
-              </span>
-            </span>
-            <span className="text-[11px] font-mono text-[#6E6E73] -mt-0.5">
-              @{username}
-            </span>
-          </div>
+          <span
+            className={`font-extrabold text-base tracking-tight transition-colors ${
+              isTransparent ? "text-white" : "text-[#0A0A0A]"
+            }`}
+          >
+            Replyto<span className={isTransparent ? "text-[#D2F824]" : "text-[#0D82ED]"}>.me</span>
+          </span>
         </Link>
 
-        {/* Center Links */}
-        <nav className="hidden md:flex items-center gap-6 text-[13px] font-medium text-[#6E6E73]">
+        {/* Center Desktop Navigation: Uppercase, tracking-wider */}
+        <nav
+          className={`hidden md:flex items-center gap-8 text-[12px] font-bold uppercase tracking-widest transition-colors ${
+            isTransparent ? "text-white/85" : "text-[#7E828A]"
+          }`}
+        >
           <Link
-            href="/#posts"
-            className="hover:text-[#1D1D1F] transition-colors"
+            href="/"
+            className={`transition-colors ${
+              isTransparent ? "hover:text-white" : "hover:text-[#0A0A0A]"
+            }`}
           >
-            Resources & Posts
+            Home
           </Link>
-          <a
-            href={instagramUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-[#1D1D1F] transition-colors flex items-center gap-1.5"
-          >
-            <InstagramIcon className="w-3.5 h-3.5 text-[#E1306C]" />
-            <span>@{username}</span>
-            <ExternalLink className="w-3 h-3 text-[#86868B]" />
-          </a>
           <Link
-            href="/dashboard"
-            className="hover:text-[#1D1D1F] transition-colors flex items-center gap-1.5"
+            href="/#features"
+            className={`transition-colors ${
+              isTransparent ? "hover:text-white" : "hover:text-[#0A0A0A]"
+            }`}
           >
-            <LayoutDashboard className="w-3.5 h-3.5 text-[#0071E3]" />
-            <span>Dashboard</span>
+            Services
+          </Link>
+          <Link
+            href="/#about"
+            className={`transition-colors ${
+              isTransparent ? "hover:text-white" : "hover:text-[#0A0A0A]"
+            }`}
+          >
+            About Us
+          </Link>
+          <Link
+            href="/#demo"
+            className={`transition-colors flex items-center gap-1 ${
+              isTransparent ? "hover:text-white" : "hover:text-[#0A0A0A]"
+            }`}
+          >
+            <span>Live Demo</span>
+            <ChevronDown className="w-3 h-3 opacity-70" />
+          </Link>
+          <Link
+            href="/aibyshivai"
+            className={`transition-colors flex items-center gap-1 ${
+              isTransparent ? "hover:text-white" : "hover:text-[#0A0A0A]"
+            }`}
+          >
+            <span>Live Bio</span>
+            <ArrowUpRight className="w-3.5 h-3.5 opacity-80" />
           </Link>
 
           {isAdmin && (
             <Link
               href="/admin"
-              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-700 hover:bg-amber-500/25 transition-all"
+              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-400 text-black shadow-sm"
             >
-              <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-              <span>Admin Console</span>
+              <Sparkles className="w-3 h-3 fill-black" />
+              <span>ADMIN</span>
             </Link>
           )}
         </nav>
 
-        {/* Actions: Direct access to Dashboard & New Post */}
-        <div className="flex items-center gap-2.5">
-          {isAdmin && (
+        {/* Right CTA Button: Neon Lime Pill "GET STARTED" */}
+        <div className="hidden sm:flex items-center gap-3">
+          {user ? (
+            <div className="flex items-center gap-2">
+              <Link
+                href="/dashboard"
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
+                  isTransparent
+                    ? "bg-white/15 text-white hover:bg-white/25 border border-white/20"
+                    : "bg-[#F4F5F7] text-[#0A0A0A] hover:bg-[#EAEBED]"
+                }`}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={avatarUrl}
+                  alt={displayName}
+                  referrerPolicy="no-referrer"
+                  crossOrigin="anonymous"
+                  className="w-4 h-4 rounded-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = "/avatar.png";
+                  }}
+                />
+                <span className="max-w-[100px] truncate">{displayName}</span>
+              </Link>
+              <button
+                onClick={() => signOut()}
+                className={`p-2 rounded-full transition-colors ${
+                  isTransparent
+                    ? "text-white/70 hover:text-white hover:bg-white/10"
+                    : "text-[#7E828A] hover:text-[#0A0A0A] hover:bg-black/5"
+                }`}
+                title="Sign out"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ) : (
             <Link
-              href="/admin"
-              className="hidden sm:inline-flex md:hidden items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold bg-amber-500/15 text-amber-700 hover:bg-amber-500/25 transition-all"
+              href="/login"
+              className={`text-xs font-bold uppercase tracking-wider transition-colors mr-2 ${
+                isTransparent
+                  ? "text-white/90 hover:text-white"
+                  : "text-[#7E828A] hover:text-[#0A0A0A]"
+              }`}
             >
-              <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-              <span>Admin</span>
+              Sign In
             </Link>
           )}
 
-          <a
-            href={instagramUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold text-[#1D1D1F] bg-[#F5F5F7] hover:bg-[#EBEBED] border border-[#E5E5EA] transition-all apple-btn"
-          >
-            <InstagramIcon className="w-3.5 h-3.5 text-[#E1306C]" />
-            <span>Instagram</span>
-          </a>
-
           <Link
-            href="/dashboard/new"
-            className="apple-btn flex items-center gap-1.5 px-4 py-2 rounded-full text-xs sm:text-sm font-semibold bg-[#0071E3] hover:bg-[#0077ED] text-white shadow-[0_2px_10px_rgba(0,113,227,0.3)]"
+            href={user ? "/dashboard" : "/login"}
+            className="btn-lime text-xs font-black uppercase tracking-wider"
           >
-            <Plus className="w-4 h-4 stroke-[2.5]" />
-            <span>New Post</span>
+            <span>{user ? "Dashboard" : "Get Started"}</span>
+            <ArrowUpRight className="w-3.5 h-3.5 stroke-[2.5]" />
           </Link>
         </div>
+
+        {/* Mobile menu trigger */}
+        <div className="flex sm:hidden items-center gap-2">
+          <Link
+            href={user ? "/dashboard" : "/login"}
+            className="btn-lime text-[11px] px-3.5 py-1.5"
+          >
+            Start
+          </Link>
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className={`p-2 rounded-lg transition-colors ${
+              isTransparent ? "text-white hover:bg-white/10" : "text-[#0A0A0A]"
+            }`}
+          >
+            {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          </button>
+        </div>
       </div>
+
+      {/* Mobile Drawer */}
+      {mobileMenuOpen && (
+        <div className="sm:hidden bg-white text-[#0A0A0A] border-b border-black/10 px-6 py-6 space-y-4 shadow-xl">
+          <Link
+            href="/"
+            onClick={() => setMobileMenuOpen(false)}
+            className="block text-sm font-bold uppercase tracking-wider text-[#0A0A0A]"
+          >
+            Home
+          </Link>
+          <Link
+            href="/#features"
+            onClick={() => setMobileMenuOpen(false)}
+            className="block text-sm font-bold uppercase tracking-wider text-[#7E828A]"
+          >
+            Services
+          </Link>
+          <Link
+            href="/#about"
+            onClick={() => setMobileMenuOpen(false)}
+            className="block text-sm font-bold uppercase tracking-wider text-[#7E828A]"
+          >
+            About Us
+          </Link>
+          <Link
+            href="/#demo"
+            onClick={() => setMobileMenuOpen(false)}
+            className="block text-sm font-bold uppercase tracking-wider text-[#7E828A]"
+          >
+            Live Demo
+          </Link>
+          <Link
+            href="/aibyshivai"
+            onClick={() => setMobileMenuOpen(false)}
+            className="block text-sm font-bold uppercase tracking-wider text-[#0D82ED]"
+          >
+            Live Creator Bio ↗
+          </Link>
+          <div className="pt-2">
+            <Link
+              href={user ? "/dashboard" : "/login"}
+              onClick={() => setMobileMenuOpen(false)}
+              className="btn-lime w-full justify-center"
+            >
+              Get Started ↗
+            </Link>
+          </div>
+        </div>
+      )}
     </header>
   );
 };

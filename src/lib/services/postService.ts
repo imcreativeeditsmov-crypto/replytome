@@ -36,7 +36,10 @@ export const PostService = {
 
     try {
       const docRef = doc(db!, "users", uid);
-      const snap = await getDoc(docRef);
+      const timeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Timeout")), 2500)
+      );
+      const snap = await Promise.race([getDoc(docRef), timeout]);
       if (snap.exists()) {
         return snap.data() as UserProfile;
       }
@@ -75,6 +78,34 @@ export const PostService = {
     } catch (error) {
       console.error("Error fetching user by username:", error);
       return MockStore.getUserByUsername(normalized);
+    }
+  },
+
+  /**
+   * Fetch a user profile by email
+   */
+  async getUserByEmail(email: string): Promise<UserProfile | null> {
+    const normalized = email.trim().toLowerCase();
+
+    if (!this.isConfigured()) {
+      const all = MockStore.getAllUsers();
+      return all.find((u) => u.email?.toLowerCase() === normalized) || null;
+    }
+
+    try {
+      const q = query(collection(db!, "users"), where("email", "==", normalized));
+      const timeout = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Timeout")), 3000)
+      );
+      const snap = await Promise.race([getDocs(q), timeout]);
+      if (!snap.empty) {
+        return snap.docs[0].data() as UserProfile;
+      }
+      return null;
+    } catch (error) {
+      console.error("Error fetching user by email:", error);
+      const all = MockStore.getAllUsers();
+      return all.find((u) => u.email?.toLowerCase() === normalized) || null;
     }
   },
 

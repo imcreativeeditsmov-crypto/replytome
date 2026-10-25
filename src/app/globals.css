@@ -1,109 +1,224 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
-:root {
-  --background: #FFFFFF;
-  --secondary: #F5F5F7;
-  --secondary-hover: #EBEBED;
-  --foreground: #1D1D1F;
-  --foreground-secondary: #6E6E73;
-  --foreground-tertiary: #86868B;
-  --border: #E5E5EA;
-  --border-light: #F0F0F2;
-  --accent: #0071E3;
-  --accent-hover: #0077ED;
-  --accent-active: #0062C4;
-  --accent-light: #F0F7FF;
-  --card: #FFFFFF;
-  --success: #34C759;
-  --danger: #FF3B30;
-  --warning: #FF9500;
-  
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 12px 36px rgba(0, 0, 0, 0.08);
-  --shadow-float: 0 20px 48px -8px rgba(0, 0, 0, 0.12);
+@theme {
+  --font-sans: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, monospace;
 }
 
-* {
+:root {
+  /* Aeline Palette */
+  --primary-sky: #0D82ED;
+  --primary-sky-deep: #0866BD;
+  --primary-sky-light: #2496F8;
+  --accent-lime: #D2F824;
+  --accent-lime-hover: #C3E817;
+  --dark: #0A0A0A;
+  --dark-surface: #111113;
+  --surface-light: #F4F5F7;
+  --text-muted: #7E828A;
+  --border-light: rgba(0, 0, 0, 0.08);
+
+  --background: #FFFFFF;
+  --foreground: #0A0A0A;
+}
+
+*,
+*::before,
+*::after {
   box-sizing: border-box;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 html,
+body,
+h1, h2, h3, h4, h5, h6,
+p, span, div, a, button, input, textarea, label {
+  font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+}
+
+code, kbd, samp, pre, .font-mono {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Monaco, Consolas, var(--font-geist-mono), monospace !important;
+}
+
+html,
 body {
-  background-color: var(--background);
+  background-color: #FFFFFF;
   color: var(--foreground);
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", "Helvetica Neue", sans-serif;
-  letter-spacing: -0.011em;
   margin: 0;
   padding: 0;
   min-height: 100vh;
 }
 
-/* Headings with tight Apple letter-spacing */
+/* Headings with tight modern letter spacing */
 h1, h2, h3, h4, h5, h6 {
-  letter-spacing: -0.025em;
-  font-weight: 600;
+  letter-spacing: -0.035em !important;
+  font-weight: 700;
 }
 
-/* Custom scrollbars Apple style */
-::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+/* Sky hero gradient with clouds styling */
+.hero-sky-bg {
+  background: linear-gradient(180deg, #0972D3 0%, #0D82ED 35%, #2499FC 70%, #5EB2FA 100%) !important;
+  position: relative;
+  overflow: hidden;
 }
 
-::-webkit-scrollbar-track {
-  background: transparent;
+.hero-sky-bg h1 {
+  color: #FFFFFF !important;
 }
 
-::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.15);
+.hero-sky-bg p {
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+/* Realistic cloud layers */
+.cloud-layer-1 {
+  position: absolute;
+  bottom: -40px;
+  left: -10%;
+  width: 120%;
+  height: 260px;
+  background: radial-gradient(ellipse at 50% 100%, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.75) 45%, rgba(255, 255, 255, 0) 80%);
+  filter: blur(28px);
+  pointer-events: none;
+}
+
+.cloud-layer-2 {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 140px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.6) 50%, #FFFFFF 100%);
+  pointer-events: none;
+}
+
+/* Button Variants matching Aeline template */
+.btn-lime {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.4rem;
   border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #0A0A0A !important;
+  background-color: #D2F824 !important;
+  box-shadow: 0 4px 14px rgba(210, 248, 36, 0.35);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.25);
+.btn-lime:hover {
+  background-color: #C3E817 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(210, 248, 36, 0.45);
 }
 
-/* Frosted glass utility */
-.frosted-nav {
-  background: rgba(255, 255, 255, 0.82);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(229, 229, 234, 0.7);
+.btn-lime:active {
+  transform: scale(0.98);
 }
 
-.frosted-glass {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(229, 229, 234, 0.8);
+.btn-glass-hero {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.4rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #FFFFFF !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.frosted-card {
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow-sm);
+.btn-glass-hero:hover {
+  background: rgba(255, 255, 255, 0.25) !important;
+  border-color: rgba(255, 255, 255, 0.5) !important;
+  transform: translateY(-1px);
 }
 
-/* Subtle Apple button tap */
+.btn-glass-hero:active {
+  transform: scale(0.98);
+}
+
+.btn-dark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.4rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #FFFFFF !important;
+  background-color: #0A0A0A !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-dark:hover {
+  background-color: #1F1F24 !important;
+  transform: translateY(-1px);
+}
+
+.btn-dark:active {
+  transform: scale(0.98);
+}
+
+/* Subtle micro-interaction utility */
 .apple-btn {
-  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
-
+.apple-btn:hover {
+  transform: translateY(-1px);
+}
 .apple-btn:active {
   transform: scale(0.98);
 }
 
-/* Spring transition utility */
-.spring-transition {
-  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+/* Infinite Marquee Animation for Partner Logos */
+@keyframes marquee {
+  0% { transform: translateX(0%); }
+  100% { transform: translateX(-50%); }
 }
 
-/* Hide scrollbar for carousel */
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee 25s linear infinite;
+}
+
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* Clean minimal scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.12);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.25);
+}
+
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }

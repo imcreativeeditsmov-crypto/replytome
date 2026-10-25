@@ -49,7 +49,6 @@ export const PublicPostView: React.FC<PublicPostViewProps> = ({
   // Client hydration & sync check
   useEffect(() => {
     if (!post) {
-      // 1. Check local client MockStore
       const local = MockStore.getPostBySlug(username, slug);
       if (local) {
         const stripped = PostService.stripGatedContent(local.post, false);
@@ -58,7 +57,6 @@ export const PublicPostView: React.FC<PublicPostViewProps> = ({
         setIsUnlocked(!local.post.gateEnabled);
         setIsResolving(false);
 
-        // Upload to server so it is persisted permanently in data/store.json
         fetch("/api/posts", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -67,7 +65,6 @@ export const PublicPostView: React.FC<PublicPostViewProps> = ({
         return;
       }
 
-      // 2. Fetch from /api/posts route
       fetch(`/api/posts?username=${encodeURIComponent(username)}&slug=${encodeURIComponent(slug)}`)
         .then((res) => res.json())
         .then((data) => {
@@ -90,14 +87,12 @@ export const PublicPostView: React.FC<PublicPostViewProps> = ({
   useEffect(() => {
     if (!post) return;
 
-    // 1. Record analytics view
     fetch("/api/analytics/view", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ postId: post.id }),
     }).catch((e) => console.error(e));
 
-    // 2. Check if previously unlocked on this device
     if (post.gateEnabled && typeof window !== "undefined") {
       const stored = localStorage.getItem(`replyto_unlocked_${post.id}`);
       if (stored === "true") {
@@ -167,8 +162,8 @@ export const PublicPostView: React.FC<PublicPostViewProps> = ({
   if (isResolving) {
     return (
       <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6 text-center">
-        <Loader2 className="w-8 h-8 animate-spin text-[#0071E3] mb-3" />
-        <p className="text-sm font-medium text-[#1D1D1F]">Loading resource...</p>
+        <Loader2 className="w-7 h-7 animate-spin text-[#0071E3] mb-3" />
+        <p className="text-xs font-medium text-[#86868B]">Loading resource...</p>
       </div>
     );
   }
@@ -177,44 +172,44 @@ export const PublicPostView: React.FC<PublicPostViewProps> = ({
   if (!post || !user) {
     return (
       <div className="min-h-screen bg-white text-[#1D1D1F] flex flex-col justify-between selection:bg-[#0071E3]/20">
-        <header className="h-16 border-b border-[#E5E5EA] flex items-center px-6">
-          <Link href={`/${username}`} className="flex items-center gap-2 group">
-            <ArrowLeft className="w-4 h-4 text-[#86868B] group-hover:text-[#1D1D1F]" />
-            <span className="font-semibold text-sm">@{username}</span>
+        <header className="h-14 border-b border-black/[0.06] flex items-center px-6">
+          <Link href={`/${username}`} className="flex items-center gap-2 group text-xs font-medium text-[#86868B] hover:text-[#1D1D1F]">
+            <ArrowLeft className="w-4 h-4" />
+            <span>@{username}</span>
           </Link>
         </header>
 
         <main className="max-w-md mx-auto px-4 py-16 text-center">
-          <div className="w-16 h-16 rounded-3xl bg-[#F5F5F7] border border-[#E5E5EA] flex items-center justify-center text-[#86868B] mx-auto mb-6">
-            <Search className="w-8 h-8" />
+          <div className="w-14 h-14 rounded-2xl bg-[#F5F5F7] border border-black/[0.06] flex items-center justify-center text-[#86868B] mx-auto mb-4">
+            <Search className="w-6 h-6" />
           </div>
-          <span className="text-xs font-mono font-bold text-[#0071E3] uppercase tracking-widest">
+          <span className="text-[11px] font-mono font-semibold text-[#0071E3] uppercase tracking-wider">
             Resource Not Found
           </span>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#1D1D1F] mt-2 mb-3">
+          <h1 className="text-2xl font-semibold tracking-tight text-[#1D1D1F] mt-1 mb-2">
             Post not available
           </h1>
-          <p className="text-sm text-[#6E6E73] leading-relaxed mb-8">
+          <p className="text-xs text-[#86868B] leading-relaxed mb-6">
             This guide or prompt pack may have been removed or the link is incorrect.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
               href={`/${username}`}
-              className="w-full sm:w-auto px-6 py-3 rounded-full bg-[#0071E3] text-white text-xs font-semibold hover:bg-[#0077ED] transition-all apple-btn shadow-sm"
+              className="apple-btn-primary text-xs py-2 px-5"
             >
-              ← Back to Shivai&apos;s Bio
+              ← Back to Bio
             </Link>
             <Link
               href="/dashboard"
-              className="w-full sm:w-auto px-6 py-3 rounded-full bg-[#F5F5F7] text-[#1D1D1F] text-xs font-semibold hover:bg-[#EBEBED] transition-all border border-[#E5E5EA]"
+              className="apple-btn-secondary text-xs py-2 px-5"
             >
               Creator Dashboard
             </Link>
           </div>
         </main>
 
-        <footer className="py-6 text-center border-t border-[#E5E5EA] text-xs text-[#86868B]">
-          Replyto.me — Your link in bio, but smarter.
+        <footer className="py-6 text-center border-t border-black/[0.06] text-xs text-[#86868B]">
+          Replyto.me — Smarter link in bio for creators.
         </footer>
       </div>
     );
@@ -231,13 +226,13 @@ export const PublicPostView: React.FC<PublicPostViewProps> = ({
     (post.gateScope === "text_blocks" || post.gateScope === "both");
 
   return (
-    <div className="min-h-screen bg-white selection:bg-[#0071E3]/20 flex flex-col justify-between">
-      {/* Top sticky frosted navigation bar */}
-      <header className="sticky top-0 z-30 frosted-nav">
-        <div className="max-w-[540px] mx-auto px-4 h-14 flex items-center justify-between">
+    <div className="min-h-screen bg-[#FFFFFF] selection:bg-[#0071E3]/20 flex flex-col justify-between font-sans">
+      {/* Top sticky Apple navigation bar */}
+      <header className="sticky top-0 z-30 apple-nav">
+        <div className="max-w-[540px] mx-auto px-4 h-13 flex items-center justify-between">
           <Link
             href={`/${username}`}
-            className="flex items-center gap-2 text-xs font-semibold text-[#1D1D1F] hover:text-[#0071E3] transition-colors apple-btn"
+            className="flex items-center gap-2 text-xs font-medium text-[#1D1D1F] hover:text-[#0071E3] transition-colors apple-btn"
           >
             <ArrowLeft className="w-4 h-4 text-[#86868B]" />
             <div className="flex items-center gap-1.5">
@@ -247,12 +242,12 @@ export const PublicPostView: React.FC<PublicPostViewProps> = ({
                 alt={user.displayName}
                 referrerPolicy="no-referrer"
                 crossOrigin="anonymous"
-                className="w-5 h-5 rounded-full object-cover border border-[#E5E5EA]"
+                className="w-5 h-5 rounded-full object-cover border border-black/[0.08]"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = "/avatar.png";
                 }}
               />
-              <span className="truncate max-w-[140px] sm:max-w-[200px]">
+              <span className="truncate max-w-[140px] sm:max-w-[200px] font-semibold">
                 {user.displayName}
               </span>
             </div>
@@ -262,9 +257,9 @@ export const PublicPostView: React.FC<PublicPostViewProps> = ({
             <button
               onClick={handleShare}
               aria-label="Share post"
-              className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-[#F5F5F7] hover:bg-[#EBEBED] text-xs font-semibold text-[#1D1D1F] border border-[#E5E5EA] transition-all apple-btn"
+              className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-[#F5F5F7] hover:bg-[#E8E8ED] text-xs font-medium text-[#1D1D1F] border border-black/[0.06] transition-all apple-btn"
             >
-              <Share2 className="w-3.5 h-3.5 text-[#6E6E73]" />
+              <Share2 className="w-3.5 h-3.5 text-[#86868B]" />
               <span>Share</span>
             </button>
           </div>
@@ -292,33 +287,34 @@ export const PublicPostView: React.FC<PublicPostViewProps> = ({
                 ) : (
                   <>
                     <Lock className="w-3 h-3" />
-                    <span>Locked • Comment &quot;{post.gateKeyword}&quot;</span>
+                    <span>Comment &quot;{post.gateKeyword}&quot; to unlock</span>
                   </>
                 )}
               </span>
             ) : (
-              <span className="text-[11px] font-medium text-[#6E6E73] bg-[#F5F5F7] px-2.5 py-0.5 rounded-full">
+              <span className="text-[11px] font-medium text-[#86868B] bg-[#F5F5F7] px-2.5 py-0.5 rounded-full">
                 Public Resource
               </span>
             )}
           </div>
 
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#1D1D1F] tracking-tight leading-tight">
+          <h1 className="text-2xl sm:text-3xl font-semibold text-[#1D1D1F] tracking-tight leading-tight">
             {post.title}
           </h1>
 
-          <div className="flex items-center gap-2 text-xs text-[#6E6E73] mt-2">
+          <div className="flex items-center gap-2 text-xs text-[#86868B] mt-2">
             <span>by</span>
             <Link
               href={`/${username}`}
-              className="font-semibold text-[#1D1D1F] hover:text-[#0071E3] transition-colors"
+              className="font-medium text-[#1D1D1F] hover:text-[#0071E3] transition-colors"
             >
               @{username}
             </Link>
+            <span>•</span>
             <span>
               {isUnlocked
                 ? `${post.textBlocks?.length || 0} copyable sections`
-                : `Locked content • Comment to unlock`}
+                : `Comment to unlock`}
             </span>
           </div>
         </div>
@@ -361,9 +357,9 @@ export const PublicPostView: React.FC<PublicPostViewProps> = ({
         ) : (
           <AnimatePresence>
             <motion.div
-              initial={{ opacity: 0, y: 16 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.35, ease: "easeOut" }}
+              transition={{ duration: 0.3 }}
               className="space-y-4"
             >
               {post.gateEnabled && (
@@ -386,7 +382,7 @@ export const PublicPostView: React.FC<PublicPostViewProps> = ({
                   ))}
                 </div>
               ) : (
-                <div className="p-8 rounded-2xl bg-[#F5F5F7] border border-[#E5E5EA] text-center text-xs text-[#6E6E73]">
+                <div className="p-8 rounded-2xl bg-[#F5F5F7] border border-black/[0.04] text-center text-xs text-[#86868B]">
                   No text content added to this post.
                 </div>
               )}
@@ -394,29 +390,29 @@ export const PublicPostView: React.FC<PublicPostViewProps> = ({
           </AnimatePresence>
         )}
 
-        {/* Floating / Bottom Share Box */}
-        <div className="pt-4 border-t border-[#E5E5EA]">
+        {/* Bottom Share Box */}
+        <div className="pt-4 border-t border-black/[0.06]">
           <button
             onClick={handleShare}
-            className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-[#F5F5F7] hover:bg-[#EBEBED] text-[#1D1D1F] border border-[#E5E5EA] text-xs font-semibold transition-all apple-btn"
+            className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-full bg-[#F5F5F7] hover:bg-[#E8E8ED] text-[#1D1D1F] border border-black/[0.06] text-xs font-medium transition-all apple-btn"
           >
-            <Share2 className="w-4 h-4 text-[#6E6E73]" />
-            <span>Share this post with a friend</span>
+            <Share2 className="w-4 h-4 text-[#86868B]" />
+            <span>Share this resource</span>
           </button>
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="w-full py-8 text-center border-t border-[#E5E5EA] bg-[#F5F5F7]">
+      {/* Apple Footer */}
+      <footer className="w-full py-8 text-center border-t border-black/[0.06] bg-[#F5F5F7]">
         <Link
           href="/"
-          className="inline-flex items-center gap-1.5 text-xs font-medium text-[#6E6E73] hover:text-[#1D1D1F] transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-[#86868B] hover:text-[#1D1D1F] transition-colors"
         >
           <span>Powered by</span>
           <span className="font-semibold text-[#1D1D1F]">Replyto.me</span>
         </Link>
         <p className="text-[11px] text-[#86868B] mt-0.5">
-          Your link in bio, but smarter.
+          Smarter link in bio for creators.
         </p>
       </footer>
 

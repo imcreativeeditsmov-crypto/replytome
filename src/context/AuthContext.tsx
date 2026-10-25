@@ -17,6 +17,7 @@ import {
   getGoogleProvider,
 } from "@/lib/firebase/config";
 import { MockStore, INITIAL_DEMO_USER } from "@/lib/firebase/mockData";
+import { PostService } from "@/lib/services/postService";
 import { UserProfile } from "@/types";
 import { isPlatformAdmin } from "@/lib/auth/adminCheck";
 
@@ -34,15 +35,16 @@ interface AuthContextType {
   isAdmin: boolean;
   isDemoMode: boolean;
   needsOnboarding: boolean;
-  signInWithGoogle: (options?: { useRedirect?: boolean }) => Promise<{
+  signInWithGoogle: (options?: { useRedirect?: boolean; targetPath?: string }) => Promise<{
     success: boolean;
     user: AuthUser | null;
     profile?: UserProfile | null;
     popupBlocked?: boolean;
     redirecting?: boolean;
+    cancelled?: boolean;
     error?: string;
   }>;
-  signInWithGoogleRedirect: () => Promise<void>;
+  signInWithGoogleRedirect: (options?: { targetPath?: string }) => Promise<void>;
   signInWithCustomUser: (params: {
     displayName: string;
     username: string;
@@ -58,6 +60,8 @@ interface AuthContextType {
 
 const AUTH_USER_KEY = "replyto_auth_user_v7";
 const AUTH_PROFILE_KEY = "replyto_auth_profile_v7";
+const REDIRECT_TARGET_KEY = "replyto_auth_redirect_target";
+const REDIRECT_PENDING_KEY = "replyto_google_redirect_pending";
 
 export const DEFAULT_SHIVAI_USER: AuthUser = {
   uid: "shivai-creator-uid",
@@ -65,6 +69,12 @@ export const DEFAULT_SHIVAI_USER: AuthUser = {
   email: "aibyshivai@gmail.com",
   photoURL: "/avatar.png",
 };
+
+export function isInAppBrowser(): boolean {
+  if (typeof window === "undefined") return false;
+  const ua = navigator.userAgent || navigator.vendor || (window as any).opera || "";
+  return /Instagram|FBAN|FBAV|TikTok|Line|Twitter|MicroMessenger/i.test(ua);
+}
 
 function getInitialUser(): AuthUser | null {
   if (typeof window === "undefined") return null;
@@ -103,6 +113,80 @@ function getInitialProfile(): UserProfile | null {
   return null;
 }
 
+export async function fetchUserProfileSafely(
+  uid: string,
+  fallbackEmail?: string | null,
+  fallbackUsername?: string | null
+): Promise<UserProfile | null> {
+  if (!uid) return null;
+
+  // 1. PostService Firestore direct check with timeout
+  try {
+    const firestoreProfile = await PostService.getUserProfile(uid);
+    if (firestoreProfile && firestoreProfile.username) {
+      return firestoreProfile;
+    }
+  } catch (e) {
+    console.warn("PostService.getUserProfile fallback:", e);
+  }
+
+  // 2. By Email lookup if available
+  if (fallbackEmail) {
+    try {
+      const emailProfile = await PostService.getUserByEmail(fallbackEmail);
+      if (emailProfile && emailProfile.username) {
+        return emailProfile;
+      }
+    } catch {}
+  }
+
+  // 3. By Username lookup if available
+  if (fallbackUsername) {
+    try {
+      const userProfile = await PostService.getUserByUsername(fallbackUsername);
+      if (userProfile && userProfile.username) {
+        return userProfile;
+      }
+    } catch {}
+  }
+
+  // 4. Server API endpoint /api/users?uid=...
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2500);
+    const res = await fetch(`/api/users?uid=${encodeURIComponent(uid)}`, {
+      signal: controller.signal,
+    });
+    clearTimeout(timeoutId);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.success && data.user && data.user.username) {
+        return data.user;
+      }
+    }
+  } catch (e) {
+    console.warn("API /api/users fetch fallback:", e);
+  }
+
+  // 5. MockStore check
+  try {
+    const mock = MockStore.getUser(uid);
+    if (mock && mock.username) {
+      return mock;
+    }
+  } catch {}
+
+  // 6. Existing cached profile in localStorage if uid matches
+  try {
+    const cached = getInitialProfile();
+    if (cached && (cached.uid === uid || (fallbackEmail && cached.email === fallbackEmail)) && cached.username) {
+      return cached;
+    }
+  } catch {}
+
+  return null;
+}
+
 const AuthContext = createContext<AuthContextType>({
   user: null,
   userProfile: null,
@@ -130,7 +214,7 @@ const AuthContext = createContext<AuthContextType>({
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AuthUser | null>(getInitialUser);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(getInitialProfile);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [isDemoMode, setIsDemoMode] = useState(false);
 
   // Sync cache helpers
@@ -155,9 +239,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const currentUser = getInitialUser();
     const currentProfile = getInitialProfile();
-    setUser(currentUser);
-    setUserProfile(currentProfile);
-    setLoading(false);
+    if (currentUser) {
+      setUser(currentUser);
+      setUserProfile(currentProfile);
+      setLoading(false);
+    }
   }, []);
 
   // Listen to Firebase auth state and redirect results
@@ -178,23 +264,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setUser(authUser);
             setIsDemoMode(false);
 
-            let profile: UserProfile | null = null;
-            try {
-              const res = await fetch(`/api/users?uid=${encodeURIComponent(fbUser.uid)}`);
-              const data = await res.json();
-              if (data.success && data.user) {
-                profile = data.user;
-              }
-            } catch {
-              profile = MockStore.getUser(fbUser.uid);
-            }
-
+            const profile = await fetchUserProfileSafely(fbUser.uid, fbUser.email);
             setUserProfile(profile);
             persistSession(authUser, profile);
+
+            const redirectTarget = typeof window !== "undefined"
+              ? sessionStorage.getItem(REDIRECT_TARGET_KEY)
+              : null;
+            if (typeof window !== "undefined") {
+              sessionStorage.removeItem(REDIRECT_PENDING_KEY);
+              sessionStorage.removeItem(REDIRECT_TARGET_KEY);
+            }
+
+            const destination = redirectTarget || (profile?.username ? "/dashboard" : "/onboarding");
+            if (typeof window !== "undefined") {
+              const currentPath = window.location.pathname;
+              if (currentPath === "/login" || currentPath === "/") {
+                window.location.href = destination;
+              }
+            }
           }
         })
         .catch((err) => {
           console.error("Firebase getRedirectResult error:", err);
+          if (typeof window !== "undefined") {
+            sessionStorage.removeItem(REDIRECT_PENDING_KEY);
+            sessionStorage.removeItem(REDIRECT_TARGET_KEY);
+          }
+        })
+        .finally(() => {
+          setLoading(false);
         });
 
       // 2. Active auth state listener
@@ -208,38 +307,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           };
           setUser(authUser);
 
-          // Fetch profile from server
-          try {
-            const res = await fetch(`/api/users?uid=${encodeURIComponent(fbUser.uid)}`);
-            const data = await res.json();
-            if (data.success && data.user) {
-              setUserProfile(data.user);
-              persistSession(authUser, data.user);
+          // Fetch profile safely without wiping existing data
+          const profile = await fetchUserProfileSafely(fbUser.uid, fbUser.email);
+          if (profile) {
+            setUserProfile(profile);
+            persistSession(authUser, profile);
+          } else {
+            const cached = getInitialProfile();
+            if (cached && (cached.uid === fbUser.uid || cached.email === fbUser.email)) {
+              setUserProfile(cached);
             } else {
               setUserProfile(null);
+              persistSession(authUser, null);
             }
-          } catch {
-            const local = MockStore.getUser(fbUser.uid);
-            setUserProfile(local);
           }
         }
+        setLoading(false);
       });
       return () => unsubscribe();
+    } else {
+      setLoading(false);
     }
   }, []);
 
   /**
    * One-click Google Sign-in Handler via Firebase Auth
-   * Tries popup first; if browser blocks popups, falls back directly to signInWithRedirect.
+   * Tries popup first; if browser blocks popups or redirect requested, falls back cleanly to signInWithRedirect.
    */
   const signInWithGoogle = async (options?: {
     useRedirect?: boolean;
+    targetPath?: string;
   }): Promise<{
     success: boolean;
     user: AuthUser | null;
     profile?: UserProfile | null;
     popupBlocked?: boolean;
     redirecting?: boolean;
+    cancelled?: boolean;
     error?: string;
   }> => {
     setLoading(true);
@@ -247,106 +351,124 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const authInstance = getFirebaseAuth() || auth;
     const provider = getGoogleProvider() || googleProvider;
 
-    if (isFirebaseConfigured && authInstance && provider) {
-      if (options?.useRedirect) {
+    if (!isFirebaseConfigured || !authInstance || !provider) {
+      setLoading(false);
+      return {
+        success: false,
+        user: null,
+        error: "Firebase Authentication is not configured or ready. Please try again or use direct login.",
+      };
+    }
+
+    const targetPath = options?.targetPath || "/dashboard";
+
+    const isMobile = typeof window !== "undefined" && (
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
+    );
+
+    // If explicit redirect requested:
+    if (options?.useRedirect) {
+      try {
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem(REDIRECT_PENDING_KEY, "true");
+          sessionStorage.setItem(REDIRECT_TARGET_KEY, targetPath);
+        }
+        await signInWithRedirect(authInstance, provider);
+        return { success: true, user: null, redirecting: true };
+      } catch (redirectErr: any) {
+        setLoading(false);
+        console.error("signInWithRedirect error:", redirectErr);
+        return {
+          success: false,
+          user: null,
+          error: redirectErr?.message || "Google redirect sign-in failed.",
+        };
+      }
+    }
+
+    // Try popup first
+    try {
+      const result = await signInWithPopup(authInstance, provider);
+      const fbUser = result.user;
+      const authUser: AuthUser = {
+        uid: fbUser.uid,
+        email: fbUser.email,
+        displayName: fbUser.displayName,
+        photoURL: fbUser.photoURL,
+      };
+
+      setUser(authUser);
+      setIsDemoMode(false);
+
+      const profile = await fetchUserProfileSafely(fbUser.uid, fbUser.email);
+      setUserProfile(profile);
+      persistSession(authUser, profile);
+
+      setLoading(false);
+      return { success: true, user: authUser, profile };
+    } catch (err: any) {
+      console.error("Firebase Google sign-in error:", err);
+
+      if (
+        err?.code === "auth/popup-closed-by-user" ||
+        err?.code === "auth/cancelled-popup-request"
+      ) {
+        setLoading(false);
+        return { success: false, user: null, cancelled: true, error: "Popup closed" };
+      }
+
+      // If popup was blocked by browser or running on mobile
+      if (err?.code === "auth/popup-blocked" || isMobile) {
+        console.warn("Popup blocked or mobile browser. Attempting full-page redirect to Google...");
         try {
+          if (typeof window !== "undefined") {
+            sessionStorage.setItem(REDIRECT_PENDING_KEY, "true");
+            sessionStorage.setItem(REDIRECT_TARGET_KEY, targetPath);
+          }
           await signInWithRedirect(authInstance, provider);
           return { success: true, user: null, redirecting: true };
         } catch (redirectErr: any) {
+          console.error("Redirect fallback error:", redirectErr);
           setLoading(false);
-          console.error("signInWithRedirect error:", redirectErr);
           return {
             success: false,
             user: null,
-            error: redirectErr?.message || "Google redirect sign-in failed.",
+            popupBlocked: true,
+            error: "Popup blocked by your browser. Please tap the redirect button below.",
           };
         }
       }
 
-      try {
-        const result = await signInWithPopup(authInstance, provider);
-        const fbUser = result.user;
-        const authUser: AuthUser = {
-          uid: fbUser.uid,
-          email: fbUser.email,
-          displayName: fbUser.displayName,
-          photoURL: fbUser.photoURL,
-        };
+      setLoading(false);
 
-        setUser(authUser);
-        setIsDemoMode(false);
-
-        // Fetch user profile from server
-        let profile: UserProfile | null = null;
-        try {
-          const res = await fetch(`/api/users?uid=${encodeURIComponent(fbUser.uid)}`);
-          const data = await res.json();
-          if (data.success && data.user) {
-            profile = data.user;
-          }
-        } catch {
-          profile = MockStore.getUser(fbUser.uid);
-        }
-
-        setUserProfile(profile);
-        persistSession(authUser, profile);
-
-        setLoading(false);
-        return { success: true, user: authUser, profile };
-      } catch (err: any) {
-        console.error("Firebase Google sign-in error:", err);
-
-        if (err?.code === "auth/popup-closed-by-user" || err?.code === "auth/cancelled-popup-request") {
-          setLoading(false);
-          return { success: false, user: null, error: "Popup closed" };
-        }
-
-        // Automatic fallback if browser blocks popups
-        if (err?.code === "auth/popup-blocked") {
-          console.warn("Popup blocked by browser. Attempting full-page redirect to Google...");
-          try {
-            await signInWithRedirect(authInstance, provider);
-            return { success: true, user: null, redirecting: true };
-          } catch (redirectErr: any) {
-            console.error("Redirect fallback error:", redirectErr);
-            setLoading(false);
-            return {
-              success: false,
-              user: null,
-              popupBlocked: true,
-              error: "Popup blocked by your browser. Please tap the redirect button below.",
-            };
-          }
-        }
-
-        setLoading(false);
-
-        if (err?.code === "auth/unauthorized-domain") {
-          const currentDomain = typeof window !== "undefined" ? window.location.hostname : "replytome-three.vercel.app";
-          const msg = `Domain (${currentDomain}) is not authorized in Firebase! Please add "${currentDomain}" to Firebase Console -> Authentication -> Settings -> Authorized Domains.`;
-          if (typeof window !== "undefined") {
-            alert(msg);
-          }
-          return { success: false, user: null, error: msg };
-        }
-
-        return { success: false, user: null, error: err?.message || "Google sign-in failed" };
+      if (err?.code === "auth/unauthorized-domain") {
+        const currentDomain = typeof window !== "undefined" ? window.location.hostname : "replytome-three.vercel.app";
+        const msg = `Domain (${currentDomain}) is not authorized in Firebase! Please add "${currentDomain}" to Firebase Console -> Authentication -> Settings -> Authorized Domains.`;
+        return { success: false, user: null, error: msg };
       }
-    }
 
-    setLoading(false);
-    return { success: false, user: null, error: "Firebase Authentication is not ready. Please try again." };
+      return {
+        success: false,
+        user: null,
+        error: err?.message || "Google sign-in failed. Please try again or use direct login.",
+      };
+    }
   };
 
   /**
    * Direct Full-Page Redirect Sign-In
    */
-  const signInWithGoogleRedirect = async (): Promise<void> => {
+  const signInWithGoogleRedirect = async (options?: { targetPath?: string }): Promise<void> => {
     setLoading(true);
     const authInstance = getFirebaseAuth() || auth;
     const provider = getGoogleProvider() || googleProvider;
 
     if (isFirebaseConfigured && authInstance && provider) {
+      const targetPath = options?.targetPath || "/dashboard";
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem(REDIRECT_PENDING_KEY, "true");
+        sessionStorage.setItem(REDIRECT_TARGET_KEY, targetPath);
+      }
       await signInWithRedirect(authInstance, provider);
     } else {
       setLoading(false);
@@ -354,9 +476,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-
   /**
    * Sign in with customizable profile (name, username, photo, instagramUrl)
+   * Also seamlessly matches and restores existing creator profile by handle or email
    */
   const signInWithCustomUser = async ({
     displayName,
@@ -373,24 +495,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }): Promise<{ success: boolean; user: AuthUser; profile: UserProfile }> => {
     setLoading(true);
     const cleanUsername = username.toLowerCase().trim().replace(/[^a-z0-9._]/g, "");
-    const uid = `user_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
+
+    // 1. Check if user profile already exists
+    let existingProfile: UserProfile | null = null;
+    try {
+      existingProfile = await PostService.getUserByUsername(cleanUsername);
+      if (!existingProfile && email) {
+        existingProfile = await PostService.getUserByEmail(email);
+      }
+    } catch {}
+
+    const uid = existingProfile?.uid || `user_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`;
 
     const isSystemAdmin = isPlatformAdmin({
       username: cleanUsername,
-      email: email,
+      email: email || existingProfile?.email,
       uid: uid,
     });
 
     const authUser: AuthUser = {
       uid,
-      displayName: displayName.trim() || "Creator",
-      email: email || `${cleanUsername || "creator"}@gmail.com`,
+      displayName: displayName.trim() || existingProfile?.displayName || "Creator",
+      email: email || existingProfile?.email || `${cleanUsername || "creator"}@gmail.com`,
       photoURL:
         photoURL ||
+        existingProfile?.photoURL ||
         `https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80`,
     };
 
-    const newProfile: UserProfile = {
+    const newProfile: UserProfile = existingProfile ? {
+      ...existingProfile,
+      displayName: displayName.trim() || existingProfile.displayName,
+      photoURL: photoURL || existingProfile.photoURL,
+      instagramUrl: instagramUrl || existingProfile.instagramUrl,
+      isAdmin: isSystemAdmin,
+      role: isSystemAdmin ? "admin" : "creator",
+      updatedAt: new Date().toISOString(),
+    } : {
       uid,
       displayName: authUser.displayName!,
       username: cleanUsername || "creator",
@@ -403,10 +544,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       createdAt: new Date().toISOString(),
     };
 
-    // Save to local store
+    // Save to Firestore / local store
+    try {
+      await PostService.saveUserProfile(newProfile);
+    } catch {}
+
     MockStore.addUser(newProfile);
 
-    // Save to server
+    // Save to server API
     try {
       await fetch("/api/users", {
         method: "POST",
@@ -414,13 +559,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         body: JSON.stringify({ user: newProfile }),
       });
     } catch (e) {
-      console.warn("Failed to save new user to server:", e);
+      console.warn("Failed to sync user to server:", e);
     }
 
     setUser(authUser);
     setUserProfile(newProfile);
     persistSession(authUser, newProfile);
-    setIsDemoMode(true);
+    setIsDemoMode(false);
     setLoading(false);
 
     return { success: true, user: authUser, profile: newProfile };
@@ -463,8 +608,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async () => {
     setLoading(true);
     try {
-      if (isFirebaseConfigured && auth) {
-        await firebaseSignOut(auth);
+      const authInstance = getFirebaseAuth() || auth;
+      if (isFirebaseConfigured && authInstance) {
+        await firebaseSignOut(authInstance);
       }
     } catch (e) {
       console.error("Sign out error:", e);
@@ -472,6 +618,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(null);
       setUserProfile(null);
       persistSession(null, null);
+      setIsDemoMode(false);
+      if (typeof window !== "undefined") {
+        sessionStorage.clear();
+      }
       setLoading(false);
     }
   };
@@ -479,11 +629,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const refreshProfile = async () => {
     if (user?.uid) {
       try {
-        const res = await fetch(`/api/users?uid=${encodeURIComponent(user.uid)}`);
-        const data = await res.json();
-        if (data.success && data.user) {
-          setUserProfile(data.user);
-          persistSession(user, data.user);
+        const profile = await fetchUserProfileSafely(user.uid, user.email, userProfile?.username);
+        if (profile) {
+          setUserProfile(profile);
+          persistSession(user, profile);
         }
       } catch (e) {
         console.error("Refresh profile error:", e);
@@ -513,7 +662,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           username: userProfile?.username,
         }))
   );
-
 
   const needsOnboarding = Boolean(user && (!userProfile || !userProfile.username));
 

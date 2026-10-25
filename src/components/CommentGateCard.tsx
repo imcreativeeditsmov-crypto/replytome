@@ -12,7 +12,6 @@ import {
   ExternalLink,
   CheckCircle2,
   AlertCircle,
-  AtSign,
 } from "lucide-react";
 import { InstagramIcon } from "@/components/icons/InstagramIcon";
 import { motion, AnimatePresence } from "framer-motion";
@@ -36,7 +35,6 @@ export const CommentGateCard: React.FC<CommentGateCardProps> = ({
   const cleanKeyword = keyword ? keyword.trim().toUpperCase() : "PROMPT";
   const targetReelUrl = reelUrl || "https://www.instagram.com/aibyshivai/";
 
-  // Check if visitor has already opened the reel in this session
   const [reelVisited, setReelVisited] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     return sessionStorage.getItem(`replyto_reel_visited_${postId}`) === "true";
@@ -52,7 +50,6 @@ export const CommentGateCard: React.FC<CommentGateCardProps> = ({
 
   const cardRef = useRef<HTMLDivElement>(null);
 
-  // Copy keyword helper
   const handleCopyKeyword = async () => {
     try {
       await navigator.clipboard.writeText(cleanKeyword);
@@ -63,13 +60,10 @@ export const CommentGateCard: React.FC<CommentGateCardProps> = ({
     }
   };
 
-  // Open the Reel on Instagram
   const handleOpenReel = () => {
     setError(null);
-    // 1. Auto-copy keyword to clipboard so visitor can paste directly in comments
     handleCopyKeyword();
 
-    // 2. Mark reel as visited in session storage with timestamp
     if (typeof window !== "undefined") {
       try {
         sessionStorage.setItem(`replyto_reel_visited_${postId}`, "true");
@@ -81,31 +75,26 @@ export const CommentGateCard: React.FC<CommentGateCardProps> = ({
 
     setReelVisited(true);
     setWaitingForReturn(true);
-
-    // 3. Open Instagram Reel in a new tab / app
     window.open(targetReelUrl, "_blank", "noopener,noreferrer");
   };
 
-  // Perform the unlock API call with robust verification
   const executeUnlock = async () => {
     setError(null);
 
-    // 1. Check that Instagram handle is provided
     const cleanHandle = instagramHandle.trim().replace(/^@/, "");
     if (!cleanHandle || cleanHandle.length < 2) {
-      setError("Please enter the Instagram username (@handle) you used to comment.");
+      setError("Please enter the Instagram handle (@username) you used to comment.");
       return;
     }
 
     setLoading(true);
 
     try {
-      // Step-by-step verification progress with fast, fluid feel
       setVerifyingNotice(`Connecting to Instagram for @${cleanHandle}...`);
-      await new Promise((r) => setTimeout(r, 450));
+      await new Promise((r) => setTimeout(r, 400));
 
-      setVerifyingNotice(`Checking comments on Reel for "${cleanKeyword}"...`);
-      await new Promise((r) => setTimeout(r, 550));
+      setVerifyingNotice(`Checking comments for "${cleanKeyword}"...`);
+      await new Promise((r) => setTimeout(r, 500));
 
       let textBlocks: PostTextBlock[] = [];
       let images: string[] = [];
@@ -129,16 +118,15 @@ export const CommentGateCard: React.FC<CommentGateCardProps> = ({
               images = data.images || [];
             }
           } catch {
-            // fallback if JSON parser throws on text
+            // fallback
           }
         }
       } catch (fetchErr) {
-        console.warn("API unlock network issue, proceeding with client unlock:", fetchErr);
+        console.warn("API unlock network fallback:", fetchErr);
       }
 
-      setVerifyingNotice(`Comment verified for @${cleanHandle}! Unlocking content...`);
+      setVerifyingNotice(`Verified! Unlocking resources...`);
 
-      // Store in localStorage permanently on this device
       if (typeof window !== "undefined") {
         try {
           localStorage.setItem(`replyto_unlocked_${postId}`, "true");
@@ -148,15 +136,14 @@ export const CommentGateCard: React.FC<CommentGateCardProps> = ({
         }
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 350));
+      await new Promise((resolve) => setTimeout(resolve, 300));
 
-      // Celebration confetti
       try {
         confetti({
-          particleCount: 90,
-          spread: 80,
+          particleCount: 80,
+          spread: 70,
           origin: { y: 0.6 },
-          colors: ["#0071E3", "#34C759", "#FF9500", "#5856D6", "#E1306C"],
+          colors: ["#0071E3", "#34C759", "#1D1D1F", "#86868B"],
         });
       } catch (e) {
         console.error(e);
@@ -165,7 +152,6 @@ export const CommentGateCard: React.FC<CommentGateCardProps> = ({
       onUnlockSuccess(textBlocks, images);
     } catch (err: unknown) {
       console.error("Unlock error:", err);
-      // Even in rare catch, never leave user stranded
       onUnlockSuccess([], []);
     } finally {
       setLoading(false);
@@ -173,7 +159,6 @@ export const CommentGateCard: React.FC<CommentGateCardProps> = ({
     }
   };
 
-  // Listen for user returning to tab from Instagram Reel (ONLY updates UI, NEVER auto-unlocks!)
   useEffect(() => {
     const handleReturn = () => {
       if (typeof window === "undefined") return;
@@ -206,45 +191,37 @@ export const CommentGateCard: React.FC<CommentGateCardProps> = ({
       ref={cardRef}
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className="relative rounded-3xl bg-white border border-[#E5E5EA] shadow-xl overflow-hidden p-6 sm:p-8 selection:bg-[#0071E3]/20"
+      className="relative rounded-[24px] bg-white border border-black/[0.08] shadow-[0_8px_30px_rgba(0,0,0,0.04)] overflow-hidden p-6 sm:p-8"
     >
-      {/* Soft ambient glow */}
-      <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-64 h-64 bg-gradient-to-b from-[#E1306C]/10 via-[#0071E3]/10 to-transparent rounded-full blur-3xl pointer-events-none" />
-
-      {/* Lock Icon & Title */}
+      {/* Lock Icon & Header */}
       <div className="flex flex-col items-center text-center mb-6">
-        <div className="relative mb-3.5">
-          <div className="w-14 h-14 rounded-2xl bg-[#0071E3]/10 text-[#0071E3] flex items-center justify-center shadow-sm border border-[#0071E3]/15">
-            <Lock className="w-7 h-7" />
-          </div>
-          <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-gradient-to-tr from-[#FD1D1D] via-[#E1306C] to-[#833AB4] flex items-center justify-center text-white shadow-sm border-2 border-white">
-            <InstagramIcon className="w-3 h-3" />
-          </div>
+        <div className="w-12 h-12 rounded-2xl bg-[#F5F5F7] border border-black/[0.06] flex items-center justify-center text-[#0071E3] mb-3.5 shadow-sm">
+          <Lock className="w-5 h-5" />
         </div>
 
-        <h3 className="text-xl sm:text-2xl font-bold text-[#1D1D1F] tracking-tight">
-          Comment on Reel to Unlock
+        <h3 className="text-xl font-semibold text-[#1D1D1F] tracking-tight">
+          Comment to Unlock
         </h3>
 
-        <p className="text-xs sm:text-sm text-[#6E6E73] max-w-sm mt-1.5 leading-relaxed">
+        <p className="text-xs text-[#86868B] max-w-sm mt-1.5 leading-relaxed">
           {message ||
-            `Comment on the Reel and verify your Instagram handle to unlock the full prompt and resources.`}
+            `Comment on the Instagram Reel and verify your handle to unlock the full prompt and resources.`}
         </p>
       </div>
 
-      {/* Step by step guide */}
+      {/* Steps */}
       <div className="space-y-3 mb-6">
-        {/* Step 1: Open Reel & Comment Keyword */}
+        {/* Step 1: Open Reel & Comment */}
         <div
           className={`flex items-center justify-between p-3.5 rounded-2xl border transition-all ${
             reelVisited
               ? "bg-[#34C759]/5 border-[#34C759]/20"
-              : "bg-[#F5F5F7] border-[#E5E5EA]"
+              : "bg-[#F5F5F7] border-black/[0.06]"
           }`}
         >
           <div className="flex items-center gap-3 min-w-0">
             <div
-              className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 ${
+              className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 ${
                 reelVisited
                   ? "bg-[#34C759] text-white"
                   : "bg-[#1D1D1F] text-white"
@@ -256,14 +233,14 @@ export const CommentGateCard: React.FC<CommentGateCardProps> = ({
               <p className="text-xs font-semibold text-[#1D1D1F]">
                 Comment &quot;{cleanKeyword}&quot; on Reel
               </p>
-              <p className="text-[11px] text-[#6E6E73] truncate">
-                Open the Reel and post a comment with &quot;<span className="font-bold text-[#0071E3]">{cleanKeyword}</span>&quot;
+              <p className="text-[11px] text-[#86868B] truncate">
+                Tap button below to open Reel & comment
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-1.5 flex-shrink-0 pl-2">
-            <div className="px-2.5 py-1 bg-white rounded-lg border border-[#E5E5EA] font-mono font-bold text-xs text-[#0071E3] tracking-wider shadow-sm">
+            <div className="px-2.5 py-1 bg-white rounded-lg border border-black/[0.08] font-mono font-bold text-xs text-[#0071E3] tracking-wider shadow-sm">
               {cleanKeyword}
             </div>
             <button
@@ -271,7 +248,7 @@ export const CommentGateCard: React.FC<CommentGateCardProps> = ({
               className={`p-1.5 rounded-lg border transition-all apple-btn ${
                 copied
                   ? "bg-[#34C759] border-[#34C759] text-white"
-                  : "bg-white border-[#E5E5EA] text-[#6E6E73] hover:text-[#1D1D1F]"
+                  : "bg-white border-black/[0.08] text-[#86868B] hover:text-[#1D1D1F]"
               }`}
               title="Copy Keyword"
             >
@@ -280,33 +257,25 @@ export const CommentGateCard: React.FC<CommentGateCardProps> = ({
           </div>
         </div>
 
-        {/* Step 2: Enter Username & Verify Comment */}
-        <div className="p-4 rounded-2xl border transition-all bg-[#0071E3]/5 border-[#0071E3]/25 shadow-sm">
+        {/* Step 2: Verify Comment */}
+        <div className="p-4 rounded-2xl border bg-[#0071E3]/5 border-[#0071E3]/20">
           <div className="flex items-center gap-3">
-            <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 bg-[#0071E3] text-white">
+            <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 bg-[#0071E3] text-white">
               2
             </div>
             <div className="text-left flex-1 min-w-0">
               <p className="text-xs font-semibold text-[#1D1D1F]">
-                Verify Your Instagram Comment
+                Verify Your Comment
               </p>
-              <p className="text-[11px] text-[#6E6E73]">
-                Enter the Instagram handle you commented from:
+              <p className="text-[11px] text-[#86868B]">
+                Enter your Instagram username:
               </p>
             </div>
-            <Sparkles className="w-4 h-4 mr-1 text-[#0071E3]" />
           </div>
 
-          {/* Username Input Field */}
-          <div className="mt-3.5 pt-3.5 border-t border-[#0071E3]/15 space-y-2">
-            <label
-              htmlFor="instagram-handle-input"
-              className="block text-[11px] font-semibold text-[#1D1D1F]"
-            >
-              Instagram Username (@handle)
-            </label>
+          <div className="mt-3 pt-3 border-t border-[#0071E3]/15 space-y-1.5">
             <div className="relative">
-              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sm font-semibold text-[#86868B]">
+              <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-xs font-mono text-[#86868B]">
                 @
               </span>
               <input
@@ -322,19 +291,16 @@ export const CommentGateCard: React.FC<CommentGateCardProps> = ({
                     executeUnlock();
                   }
                 }}
-                placeholder="creativeedits.mov"
+                placeholder="yourhandle"
                 disabled={loading}
-                className="w-full pl-8 pr-4 py-2.5 rounded-xl bg-white border border-[#E5E5EA] text-sm text-[#1D1D1F] placeholder:text-[#86868B] focus:outline-none focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20 transition-all font-medium shadow-sm"
+                className="w-full pl-8 pr-3.5 py-2.5 rounded-xl bg-white border border-black/[0.08] text-xs font-mono text-[#1D1D1F] placeholder:text-[#A1A1A6] focus:outline-none focus:border-[#0071E3] focus:ring-2 focus:ring-[#0071E3]/20 transition-all font-medium"
               />
             </div>
-            <p className="text-[10px] text-[#86868B]">
-              Content unlocks immediately once your comment is verified.
-            </p>
           </div>
         </div>
       </div>
 
-      {/* Copied notification toast */}
+      {/* Notification Toast */}
       <AnimatePresence>
         {copied && (
           <motion.div
@@ -344,81 +310,64 @@ export const CommentGateCard: React.FC<CommentGateCardProps> = ({
             className="mb-4 p-2.5 rounded-xl bg-[#34C759]/10 border border-[#34C759]/20 text-[#34C759] text-xs font-medium text-center flex items-center justify-center gap-1.5"
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>Keyword &quot;{cleanKeyword}&quot; copied! Paste it in the Reel comments.</span>
+            <span>Keyword &quot;{cleanKeyword}&quot; copied to clipboard.</span>
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* Error alert */}
       {error && (
-        <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-600 text-center flex items-center justify-center gap-1.5">
+        <div className="mb-4 p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-700 text-center flex items-center justify-center gap-1.5">
           <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
           <span>{error}</span>
         </div>
       )}
 
-      {/* Status: Waiting for user to return from Instagram */}
-      {waitingForReturn && !loading && (
-        <div className="mb-4 p-3.5 rounded-2xl bg-gradient-to-r from-[#FD1D1D]/10 via-[#E1306C]/10 to-[#833AB4]/10 border border-[#E1306C]/20 text-center">
-          <div className="flex items-center justify-center gap-2 mb-1">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#E1306C] animate-ping" />
-            <span className="text-xs font-bold text-[#1D1D1F]">
-              Reel opened! Post your comment &quot;{cleanKeyword}&quot;
-            </span>
-          </div>
-          <p className="text-[11px] text-[#6E6E73]">
-            After posting your comment on Instagram, enter your handle below to verify.
-          </p>
-        </div>
-      )}
-
       {/* Status: Verifying */}
       {verifyingNotice && (
-        <div className="mb-4 p-3.5 rounded-2xl bg-[#0071E3]/10 border border-[#0071E3]/20 text-center flex items-center justify-center gap-2 text-xs font-semibold text-[#0071E3]">
-          <Loader2 className="w-4 h-4 animate-spin" />
+        <div className="mb-4 p-3 rounded-xl bg-[#0071E3]/10 border border-[#0071E3]/20 text-center flex items-center justify-center gap-2 text-xs font-medium text-[#0071E3]">
+          <Loader2 className="w-3.5 h-3.5 animate-spin" />
           <span>{verifyingNotice}</span>
         </div>
       )}
 
       {/* Action Buttons */}
-      <div className="space-y-3">
-        {/* Step 1 CTA: Open Reel button */}
+      <div className="space-y-2.5">
         <button
           type="button"
           onClick={handleOpenReel}
-          className="w-full flex items-center justify-center gap-2.5 py-3.5 px-6 rounded-2xl bg-gradient-to-r from-[#FD1D1D] via-[#E1306C] to-[#833AB4] text-white font-semibold text-sm shadow-[0_4px_18px_rgba(225,48,108,0.35)] hover:shadow-[0_6px_24px_rgba(225,48,108,0.45)] transition-all apple-btn"
+          className="w-full flex items-center justify-center gap-2 py-3 px-5 rounded-full bg-[#1D1D1F] hover:bg-black text-white text-xs font-medium transition-all apple-btn"
         >
-          <InstagramIcon className="w-4 h-4 text-white" />
+          <InstagramIcon className="w-3.5 h-3.5 text-[#E1306C]" />
           <span>
-            {reelVisited ? "1. Re-open Reel on Instagram" : `1. Open Reel & Comment "${cleanKeyword}"`}
+            {reelVisited ? "1. Re-open Instagram Reel" : `1. Open Reel & Comment "${cleanKeyword}"`}
           </span>
-          <ExternalLink className="w-4 h-4 opacity-80" />
+          <ExternalLink className="w-3 h-3 opacity-60" />
         </button>
 
-        {/* Step 2 CTA: Verify & Unlock */}
         <button
           type="button"
           onClick={executeUnlock}
           disabled={loading}
-          className="w-full flex items-center justify-center gap-2 py-3.5 px-6 rounded-2xl bg-[#0071E3] hover:bg-[#0077ED] text-white font-semibold text-sm shadow-[0_4px_14px_rgba(0,113,227,0.3)] transition-all apple-btn disabled:opacity-50"
+          className="btn-lime w-full justify-center py-3.5 text-xs font-black disabled:opacity-50"
         >
           {loading ? (
             <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Verifying Comment on Reel...</span>
+              <Loader2 className="w-4 h-4 animate-spin text-black" />
+              <span>Verifying Comment...</span>
             </>
           ) : (
             <>
-              <CheckCircle2 className="w-4 h-4" />
-              <span>2. Verify Comment & Unlock Content</span>
-              <ArrowRight className="w-4 h-4" />
+              <CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
+              <span>2. Verify & Unlock Guide</span>
+              <ArrowRight className="w-4 h-4 stroke-[2.5]" />
             </>
           )}
         </button>
       </div>
 
       <p className="text-center text-[11px] text-[#86868B] mt-4">
-        Once verified, content stays permanently unlocked on this device.
+        Unlocked resources stay accessible permanently on this device.
       </p>
     </motion.div>
   );

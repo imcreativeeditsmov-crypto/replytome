@@ -1,22 +1,29 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Plus_Jakarta_Sans, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/context/AuthContext";
 
-const inter = Inter({
+const jakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
-  variable: "--font-inter",
+  variable: "--font-jakarta",
+  display: "swap",
+  weight: ["300", "400", "500", "600", "700", "800"],
+});
+
+const geistMono = Geist_Mono({
+  subsets: ["latin"],
+  variable: "--font-geist-mono",
   display: "swap",
 });
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://replyto.me"),
   title: {
-    default: "Replyto.me — Your link in bio, but smarter",
+    default: "Replyto.me — Smarter link in bio for creators",
     template: "%s | Replyto.me",
   },
   description:
-    "The Apple-style, comment-to-unlock link in bio for creators. Gate prompts, links, and guides behind Instagram reel comments.",
+    "Turn Reel comments into instant conversions with automated keyword-to-unlock link in bio.",
   keywords: [
     "link in bio",
     "Instagram reel unlock",
@@ -26,17 +33,17 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "Replyto.me" }],
   openGraph: {
-    title: "Replyto.me — Your link in bio, but smarter",
+    title: "Replyto.me — Smarter link in bio for creators",
     description:
-      "The Apple-style, comment-to-unlock link in bio for creators. Gate prompts, links, and guides behind Instagram reel comments.",
+      "Automated comment-to-unlock link in bio for Instagram creators.",
     siteName: "Replyto.me",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Replyto.me — Your link in bio, but smarter",
+    title: "Replyto.me — Smarter link in bio for creators",
     description:
-      "The Apple-style, comment-to-unlock link in bio for creators.",
+      "Automated comment-to-unlock link in bio for creators.",
   },
   icons: {
     icon: "/favicon.ico",
@@ -48,7 +55,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: "#FFFFFF",
+  themeColor: "#0D82ED",
 };
 
 export default function RootLayout({
@@ -57,8 +64,26 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={inter.variable}>
-      <body className="min-h-screen bg-[#FFFFFF] text-[#1D1D1F] antialiased selection:bg-[#0071E3]/15 selection:text-[#0071E3]">
+    <html lang="en" className={`${jakartaSans.variable} ${geistMono.variable}`}>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link
+          rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossOrigin="anonymous"
+        />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body
+        className={`${jakartaSans.className} min-h-screen bg-[#FFFFFF] text-[#0A0A0A] font-sans antialiased selection:bg-[#D2F824] selection:text-[#0A0A0A]`}
+        style={{
+          fontFamily:
+            "'Plus Jakarta Sans', var(--font-jakarta), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+        }}
+      >
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
