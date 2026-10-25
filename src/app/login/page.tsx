@@ -67,69 +67,56 @@ export default function LoginPage() {
     setAuthErrorMessage(null);
     setPopupBlocked(false);
     try {
-      const result = await signInWithGoogle({ targetPath: redirectPath });
+      const result = await signInWithGoogle({
+        useRedirect: isInApp,
+        targetPath: redirectPath,
+      });
+
       if (result.success && result.user) {
         setRedirecting(true);
-        const dest = (!result.profile || !result.profile.username) ? "/onboarding" : redirectPath;
-        router.push(dest);
-        setTimeout(() => {
-          if (typeof window !== "undefined" && window.location.pathname === "/login") {
-            window.location.href = dest;
-          }
-        }, 1200);
-        return;
-      } else if (result.popupBlocked) {
-        setPopupBlocked(true);
-        setAuthErrorMessage("Popup blocked by browser. Please use 'Instant 1-Click Access' below.");
-      } else if (result.error && !result.cancelled && result.error !== "Popup closed") {
-        if (result.error.toLowerCase().includes("unauthorized-domain") || result.error.toLowerCase().includes("unauthorized domain")) {
-          setIsUnauthorizedDomain(true);
-        } else {
-          setAuthErrorMessage(result.error);
-        }
-      } else if (result.cancelled) {
-        setAuthErrorMessage("Google popup was closed. Please try again or tap 'Instant 1-Click Access' below.");
-      }
-    } catch (err: any) {
-      console.error("Sign in failed:", err);
-      if (err?.code === "auth/unauthorized-domain" || err?.message?.toLowerCase().includes("unauthorized-domain")) {
-        setIsUnauthorizedDomain(true);
-      } else {
-        setAuthErrorMessage(err?.message || "Google sign-in failed. Please use 'Instant 1-Click Access' below.");
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleInstantGoogleSignIn = async () => {
-    setLoading(true);
-    setRedirecting(true);
-    setAuthErrorMessage(null);
-    try {
-      const claimed = queryHandle || "";
-      const username = claimed || "aibyshivai";
-      const res = await signInWithCustomUser({
-        displayName: "shivai",
-        username,
-        email: "aibyshivai@gmail.com",
-        photoURL: "https://lh3.googleusercontent.com/a/ACg8ocJ9qWnDSojX5KvmBmcLNNTSuvefpZR2yQRh0rsX2DynIXdeo7I=s96-c",
-        instagramUrl: "https://instagram.com/creativeedits.mov",
-      });
-      if (res.success) {
-        const dest = redirectPath || "/dashboard";
+        const isOwner = result.user.email?.toLowerCase().trim() === "aibyshivai@gmail.com";
+        const dest = isOwner
+          ? (redirectPath || "/dashboard")
+          : (!result.profile || !result.profile.username) ? "/onboarding" : redirectPath;
         router.push(dest);
         setTimeout(() => {
           if (typeof window !== "undefined" && window.location.pathname === "/login") {
             window.location.href = dest;
           }
         }, 600);
+        return;
+      } else if (result.redirecting) {
+        setRedirecting(true);
+        return;
+      } else if (result.popupBlocked) {
+        setRedirecting(true);
+        await signInWithGoogle({ useRedirect: true, targetPath: redirectPath });
+        return;
+      } else if (result.error && !result.cancelled && result.error !== "Popup closed") {
+        if (
+          result.error.toLowerCase().includes("unauthorized-domain") ||
+          result.error.toLowerCase().includes("unauthorized domain")
+        ) {
+          setIsUnauthorizedDomain(true);
+        } else {
+          setAuthErrorMessage(result.error);
+        }
       }
     } catch (err: any) {
-      console.error("Instant login failed:", err);
+      console.error("Sign in failed:", err);
+      if (
+        err?.code === "auth/unauthorized-domain" ||
+        err?.message?.toLowerCase().includes("unauthorized-domain")
+      ) {
+        setIsUnauthorizedDomain(true);
+      } else if (err?.code === "auth/popup-blocked") {
+        setRedirecting(true);
+        await signInWithGoogle({ useRedirect: true, targetPath: redirectPath });
+      } else {
+        setAuthErrorMessage(err?.message || "Google sign-in failed. Please try again.");
+      }
+    } finally {
       setLoading(false);
-      setRedirecting(false);
-      setAuthErrorMessage("Could not sign in. Please try Google Sign-In button.");
     }
   };
 
@@ -277,19 +264,6 @@ export default function LoginPage() {
                   : "Continue with Google"}
               </span>
             </button>
-
-            {/* Direct 1-Click Access fallback */}
-            <div className="pt-1">
-              <button
-                type="button"
-                onClick={handleInstantGoogleSignIn}
-                disabled={loading || redirecting}
-                className="w-full py-2.5 px-4 rounded-full bg-[#0D82ED]/10 hover:bg-[#0D82ED]/15 text-[#0D82ED] text-xs font-semibold border border-[#0D82ED]/20 transition-all flex items-center justify-center gap-2 shadow-sm"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-[#0D82ED]" />
-                <span>Instant 1-Click Access (@aibyshivai)</span>
-              </button>
-            </div>
 
             <div className="pt-2 text-center">
               <p className="text-[11px] text-[#86868B]">

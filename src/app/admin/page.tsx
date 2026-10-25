@@ -75,8 +75,16 @@ export default function AdminPage() {
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
-    setIsUnlocked(isAdminSessionUnlocked());
-  }, []);
+    if (isAdminSessionUnlocked()) {
+      setIsUnlocked(true);
+    } else if (
+      user?.email?.toLowerCase().trim() === "aibyshivai@gmail.com" ||
+      userProfile?.email?.toLowerCase().trim() === "aibyshivai@gmail.com"
+    ) {
+      setAdminSessionUnlocked(true);
+      setIsUnlocked(true);
+    }
+  }, [user, userProfile]);
 
   const isAuthorizedEmail =
     user?.email?.toLowerCase().trim() === "aibyshivai@gmail.com" ||
@@ -208,21 +216,6 @@ export default function AdminPage() {
               <Unlock className="w-3.5 h-3.5 stroke-[2.5]" />
             </button>
           </form>
-
-          {/* Instant 1-Click Unlock for Verified aibyshivai@gmail.com */}
-          <div className="pt-1">
-            <button
-              type="button"
-              onClick={() => {
-                setAdminSessionUnlocked(true);
-                setIsUnlocked(true);
-              }}
-              className="w-full py-2.5 px-4 rounded-xl bg-[#0D82ED]/10 hover:bg-[#0D82ED]/15 text-[#0D82ED] text-xs font-bold border border-[#0D82ED]/20 transition-all flex items-center justify-center gap-2 shadow-sm"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-[#0D82ED]" />
-              <span>Direct 1-Click Unlock (@aibyshivai)</span>
-            </button>
-          </div>
 
           <div className="pt-2 border-t border-black/[0.06]">
             <Link
