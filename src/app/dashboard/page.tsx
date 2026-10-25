@@ -71,7 +71,10 @@ export default function DashboardPage() {
   // Load posts
   useEffect(() => {
     if (!authLoading && !user) {
-      router.push("/login?redirect=/dashboard");
+      const cached = typeof window !== "undefined" ? localStorage.getItem("replyto_auth_user_v7") : null;
+      if (!cached) {
+        router.push("/login?redirect=/dashboard");
+      }
       return;
     }
 

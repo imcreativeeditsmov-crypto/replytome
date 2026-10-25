@@ -135,40 +135,39 @@ export async function fetchUserProfileSafely(
 ): Promise<UserProfile | null> {
   if (!uid) return null;
 
-  // 1. PostService Firestore direct check with timeout
+  // 1. Existing cached profile in localStorage if uid matches (instant 0ms)
   try {
-    const firestoreProfile = await PostService.getUserProfile(uid);
+    const cached = getInitialProfile();
+    if (cached && (cached.uid === uid || (fallbackEmail && cached.email === fallbackEmail)) && cached.username) {
+      return cached;
+    }
+  } catch {}
+
+  // 2. MockStore quick check (memory, 0ms)
+  try {
+    const mock = MockStore.getUser(uid);
+    if (mock && mock.username) {
+      return mock;
+    }
+  } catch {}
+
+  // 3. PostService Firestore direct check with short 1000ms timeout
+  try {
+    const firestoreProfile = await Promise.race([
+      PostService.getUserProfile(uid),
+      new Promise<null>((resolve) => setTimeout(() => resolve(null), 1000)),
+    ]);
     if (firestoreProfile && firestoreProfile.username) {
       return firestoreProfile;
     }
   } catch (e) {
-    console.warn("PostService.getUserProfile fallback:", e);
+    console.warn("PostService.getUserProfile quick check:", e);
   }
 
-  // 2. By Email lookup if available
-  if (fallbackEmail) {
-    try {
-      const emailProfile = await PostService.getUserByEmail(fallbackEmail);
-      if (emailProfile && emailProfile.username) {
-        return emailProfile;
-      }
-    } catch {}
-  }
-
-  // 3. By Username lookup if available
-  if (fallbackUsername) {
-    try {
-      const userProfile = await PostService.getUserByUsername(fallbackUsername);
-      if (userProfile && userProfile.username) {
-        return userProfile;
-      }
-    } catch {}
-  }
-
-  // 4. Server API endpoint /api/users?uid=...
+  // 4. Server API endpoint /api/users?uid=... with 1200ms timeout
   try {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 2500);
+    const timeoutId = setTimeout(() => controller.abort(), 1200);
     const res = await fetch(`/api/users?uid=${encodeURIComponent(uid)}`, {
       signal: controller.signal,
     });
@@ -180,24 +179,8 @@ export async function fetchUserProfileSafely(
       }
     }
   } catch (e) {
-    console.warn("API /api/users fetch fallback:", e);
+    console.warn("API /api/users quick check:", e);
   }
-
-  // 5. MockStore check
-  try {
-    const mock = MockStore.getUser(uid);
-    if (mock && mock.username) {
-      return mock;
-    }
-  } catch {}
-
-  // 6. Existing cached profile in localStorage if uid matches
-  try {
-    const cached = getInitialProfile();
-    if (cached && (cached.uid === uid || (fallbackEmail && cached.email === fallbackEmail)) && cached.username) {
-      return cached;
-    }
-  } catch {}
 
   return null;
 }
@@ -288,10 +271,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             };
             setUser(authUser);
             setIsDemoMode(false);
+            persistSession(authUser, null);
 
-            const profile = await fetchUserProfileSafely(fbUser.uid, fbUser.email);
-            setUserProfile(profile);
-            persistSession(authUser, profile);
+            let profile: UserProfile | null = null;
+            try {
+              profile = await fetchUserProfileSafely(fbUser.uid, fbUser.email);
+              if (profile) {
+                setUserProfile(profile);
+                persistSession(authUser, profile);
+              }
+            } catch (e) {
+              console.warn("Profile fetch after redirect:", e);
+            }
 
             const redirectTarget = typeof window !== "undefined"
               ? sessionStorage.getItem(REDIRECT_TARGET_KEY)
@@ -301,11 +292,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               sessionStorage.removeItem(REDIRECT_TARGET_KEY);
             }
 
-            const destination = redirectTarget || (profile?.username ? "/dashboard" : "/onboarding");
+            // CRITICAL: If new user without a username, always send to /onboarding!
+            const destination = (profile && profile.username)
+              ? (redirectTarget || "/dashboard")
+              : "/onboarding";
+
             if (typeof window !== "undefined") {
-              const currentPath = window.location.pathname;
-              if (currentPath === "/login" || currentPath === "/") {
-                window.location.href = destination;
+              const currentPath = window.location.pathname.replace(/\/$/, "");
+              if (currentPath === "/login" || currentPath === "" || currentPath === "/") {
+                window.location.replace(destination);
               }
             }
           }
@@ -331,20 +326,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             photoURL: fbUser.photoURL,
           };
           setUser(authUser);
+          persistSession(authUser, null); // Always persist authUser immediately!
 
           // Fetch profile safely without wiping existing data
-          const profile = await fetchUserProfileSafely(fbUser.uid, fbUser.email);
-          if (profile) {
-            setUserProfile(profile);
-            persistSession(authUser, profile);
-          } else {
-            const cached = getInitialProfile();
-            if (cached && (cached.uid === fbUser.uid || cached.email === fbUser.email)) {
-              setUserProfile(cached);
+          try {
+            const profile = await fetchUserProfileSafely(fbUser.uid, fbUser.email);
+            if (profile) {
+              setUserProfile(profile);
+              persistSession(authUser, profile);
             } else {
-              setUserProfile(null);
-              persistSession(authUser, null);
+              const cached = getInitialProfile();
+              if (cached && (cached.uid === fbUser.uid || cached.email === fbUser.email)) {
+                setUserProfile(cached);
+              } else {
+                setUserProfile(null);
+              }
             }
+          } catch (e) {
+            console.warn("onAuthStateChanged profile check:", e);
           }
         }
         setLoading(false);
@@ -381,7 +380,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return {
         success: false,
         user: null,
-        error: "Firebase Authentication is not configured or ready. Please try again or use direct login.",
+        error: "Firebase Authentication is not ready. Please refresh the page.",
       };
     }
 
@@ -391,8 +390,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)
     );
 
-    // If explicit redirect requested:
-    if (options?.useRedirect) {
+    // If explicit redirect requested or on mobile (mobile popups often lose opener communication):
+    if (options?.useRedirect || isMobile) {
       try {
         if (typeof window !== "undefined") {
           sessionStorage.setItem(REDIRECT_PENDING_KEY, "true");
@@ -422,12 +421,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         photoURL: fbUser.photoURL,
       };
 
+      // 1. Instantly set user and persist session BEFORE any network calls
       setUser(authUser);
       setIsDemoMode(false);
+      persistSession(authUser, null);
 
-      const profile = await fetchUserProfileSafely(fbUser.uid, fbUser.email);
-      setUserProfile(profile);
-      persistSession(authUser, profile);
+      // 2. Fetch profile safely without blocking
+      let profile: UserProfile | null = null;
+      try {
+        profile = await fetchUserProfileSafely(fbUser.uid, fbUser.email);
+        if (profile) {
+          setUserProfile(profile);
+          persistSession(authUser, profile);
+        }
+      } catch (e) {
+        console.warn("Profile fetch non-fatal:", e);
+      }
 
       setLoading(false);
       return { success: true, user: authUser, profile };
@@ -439,12 +448,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         err?.code === "auth/cancelled-popup-request"
       ) {
         setLoading(false);
-        return { success: false, user: null, cancelled: true, error: "Popup closed" };
+        return {
+          success: false,
+          user: null,
+          cancelled: true,
+          error: "Popup closed before sign in completed. Tap below to use direct redirect.",
+        };
       }
 
-      // If popup was blocked by browser or running on mobile
-      if (err?.code === "auth/popup-blocked" || isMobile) {
-        console.warn("Popup blocked or mobile browser. Attempting full-page redirect to Google...");
+      if (err?.code === "auth/popup-blocked") {
+        console.warn("Popup blocked. Attempting full-page redirect to Google...");
         try {
           if (typeof window !== "undefined") {
             sessionStorage.setItem(REDIRECT_PENDING_KEY, "true");
@@ -459,7 +472,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             success: false,
             user: null,
             popupBlocked: true,
-            error: "Popup blocked by your browser. Please tap the redirect button below.",
+            error: "Popup was blocked. Please tap the Direct Redirect button below.",
           };
         }
       }
@@ -472,10 +485,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { success: false, user: null, error: msg };
       }
 
+      if (err?.code === "auth/operation-not-allowed") {
+        return {
+          success: false,
+          user: null,
+          error: "Google Sign-In is not enabled yet in Firebase Console -> Authentication -> Sign-in method.",
+        };
+      }
+
       return {
         success: false,
         user: null,
-        error: err?.message || "Google sign-in failed. Please try again or use direct login.",
+        error: err?.message || "Google sign-in failed. Please try direct redirect below.",
       };
     }
   };

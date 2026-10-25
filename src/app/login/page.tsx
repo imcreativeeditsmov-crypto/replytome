@@ -72,17 +72,18 @@ export default function LoginPage() {
         return;
       }
       if (result.success && result.user) {
+        setRedirecting(true);
         const dest = (!result.profile || !result.profile.username) ? "/onboarding" : redirectPath;
         window.location.replace(dest);
         return;
       } else if (result.popupBlocked) {
         setPopupBlocked(true);
-      } else if (result.error && !result.cancelled && result.error !== "Popup closed") {
-        if (result.error.toLowerCase().includes("popup")) {
-          setPopupBlocked(true);
-        } else if (result.error.toLowerCase().includes("unauthorized-domain") || result.error.toLowerCase().includes("unauthorized domain")) {
+      } else if (result.cancelled || result.error?.toLowerCase().includes("popup")) {
+        setPopupBlocked(true);
+        setAuthErrorMessage("Popup closed before completing. Tap 'Continue with Direct Redirect' below to sign in without popups.");
+      } else if (result.error) {
+        if (result.error.toLowerCase().includes("unauthorized-domain") || result.error.toLowerCase().includes("unauthorized domain")) {
           setIsUnauthorizedDomain(true);
-          setAuthErrorMessage("Unauthorized Domain in Firebase: Please add 'replytome-three.vercel.app' to Firebase Console Authorized Domains.");
         } else {
           setAuthErrorMessage(result.error);
         }
@@ -91,9 +92,9 @@ export default function LoginPage() {
       console.error("Sign in failed:", err);
       if (err?.code === "auth/popup-blocked" || err?.message?.toLowerCase().includes("popup")) {
         setPopupBlocked(true);
+        setAuthErrorMessage("Popup was blocked or closed. Tap 'Continue with Direct Redirect' below.");
       } else if (err?.code === "auth/unauthorized-domain" || err?.message?.toLowerCase().includes("unauthorized-domain")) {
         setIsUnauthorizedDomain(true);
-        setAuthErrorMessage("Unauthorized Domain in Firebase: Please add 'replytome-three.vercel.app' to Firebase Console Authorized Domains.");
       } else {
         setAuthErrorMessage(err?.message || "Google sign-in failed. Please try again.");
       }
@@ -232,7 +233,7 @@ export default function LoginPage() {
               disabled={loading || redirecting}
               className="w-full py-3.5 px-5 rounded-full bg-white hover:bg-[#F9FAFB] text-[#0A0A0A] border-2 border-black/[0.1] hover:border-black/[0.2] text-xs font-bold shadow-sm transition-all flex items-center justify-center gap-3 active:scale-[0.98] disabled:opacity-60"
             >
-              {loading && !redirecting ? (
+              {loading || redirecting ? (
                 <Loader2 className="w-4 h-4 animate-spin text-[#0D82ED]" />
               ) : (
                 <svg className="w-4 h-4" viewBox="0 0 24 24">
@@ -254,24 +255,27 @@ export default function LoginPage() {
                   />
                 </svg>
               )}
-              <span>Continue with Google</span>
+              <span>
+                {redirecting
+                  ? "Redirecting to creator profile..."
+                  : loading
+                  ? "Connecting with Google..."
+                  : "Continue with Google"}
+              </span>
             </button>
 
-            {(popupBlocked || isInApp) && (
-              <div className="p-4 rounded-2xl bg-[#F5F5F7] border border-black/[0.06] text-center space-y-2">
-                <p className="text-xs text-[#86868B]">
-                  For in-app browsers or popup blockers, use full page redirect:
-                </p>
-                <button
-                  type="button"
-                  onClick={handleGoogleRedirectLogin}
-                  disabled={redirecting}
-                  className="w-full py-2.5 rounded-full bg-[#0D82ED] hover:bg-[#0972D3] text-white text-xs font-semibold shadow-sm transition-all"
-                >
-                  {redirecting ? "Redirecting to Google..." : "Continue with Full Page Redirect"}
-                </button>
-              </div>
-            )}
+            {/* Direct Redirect Alternative for browsers that block or drop popups */}
+            <div className="pt-1">
+              <button
+                type="button"
+                onClick={handleGoogleRedirectLogin}
+                disabled={loading || redirecting}
+                className="w-full py-2.5 px-4 rounded-full bg-[#0D82ED]/10 hover:bg-[#0D82ED]/15 text-[#0D82ED] text-xs font-semibold border border-[#0D82ED]/20 transition-all flex items-center justify-center gap-2"
+              >
+                <span>Continue with Direct Redirect (No Popups)</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
 
             <div className="pt-2 text-center">
               <p className="text-[11px] text-[#86868B]">

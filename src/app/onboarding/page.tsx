@@ -41,12 +41,15 @@ export default function OnboardingPage() {
   // Initialize from authenticated user or existing profile
   useEffect(() => {
     if (!authLoading && !user) {
-      const timer = setTimeout(() => {
-        if (!user) {
-          router.push("/login");
-        }
-      }, 1200);
-      return () => clearTimeout(timer);
+      const cached = typeof window !== "undefined" ? localStorage.getItem("replyto_auth_user_v7") : null;
+      if (!cached) {
+        const timer = setTimeout(() => {
+          if (!user && !localStorage.getItem("replyto_auth_user_v7")) {
+            router.push("/login");
+          }
+        }, 3000);
+        return () => clearTimeout(timer);
+      }
     }
 
     if (user) {
