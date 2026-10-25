@@ -5,9 +5,28 @@
  * All other users are regular Creators with isolated dashboards and zero admin access.
  */
 
-export const ADMIN_USERNAMES = ["creativeedits", "imcreativeedits", "creativeeditsmov"];
+export const ADMIN_EMAILS = [
+  "aibyshivai@gmail.com",
+  "imcreativeeditsmov@gmail.com",
+  "creativeedits@gmail.com",
+];
+
+export const ADMIN_USERNAMES = [
+  "aibyshivai",
+  "creativeedits",
+  "imcreativeedits",
+  "creativeeditsmov",
+  "imcreativeedits_mov",
+];
+
 export const ADMIN_UIDS = ["creativeedits-owner-uid"];
-export const ADMIN_EMAIL_PATTERNS = ["imcreativeedits", "creativeedits"];
+
+export const ADMIN_EMAIL_PATTERNS = [
+  "aibyshivai@gmail.com",
+  "aibyshivai",
+  "imcreativeedits",
+  "creativeedits",
+];
 
 export const DEFAULT_ADMIN_PASSCODE = "creative2026";
 export const ADMIN_PASSCODE_STORAGE_KEY = "replyto_admin_passcode_hash";
@@ -25,6 +44,17 @@ export interface UserAuthCheck {
 export function isPlatformAdmin(user?: UserAuthCheck | null): boolean {
   if (!user) return false;
 
+  // Check email
+  if (user.email) {
+    const emailLower = user.email.toLowerCase().trim();
+    if (
+      emailLower === "aibyshivai@gmail.com" ||
+      ADMIN_EMAIL_PATTERNS.some((pattern) => emailLower.includes(pattern))
+    ) {
+      return true;
+    }
+  }
+
   // Check username
   if (user.username) {
     const cleanUsername = user.username.toLowerCase().trim().replace(/^@/, "");
@@ -36,14 +66,6 @@ export function isPlatformAdmin(user?: UserAuthCheck | null): boolean {
   // Check UID
   if (user.uid && ADMIN_UIDS.includes(user.uid)) {
     return true;
-  }
-
-  // Check email
-  if (user.email) {
-    const emailLower = user.email.toLowerCase().trim();
-    if (ADMIN_EMAIL_PATTERNS.some((pattern) => emailLower.includes(pattern))) {
-      return true;
-    }
   }
 
   return false;

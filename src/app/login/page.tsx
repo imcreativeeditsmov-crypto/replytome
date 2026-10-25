@@ -108,22 +108,22 @@ export default function LoginPage() {
     setAuthErrorMessage(null);
     try {
       const claimed = queryHandle || "";
-      const username = claimed || "imcreativeedits_mov";
+      const username = claimed || "aibyshivai";
       const res = await signInWithCustomUser({
-        displayName: "Imcreativeedits Mov",
+        displayName: "shivai",
         username,
-        email: "imcreativeeditsmov@gmail.com",
+        email: "aibyshivai@gmail.com",
         photoURL: "https://lh3.googleusercontent.com/a/ACg8ocJ9qWnDSojX5KvmBmcLNNTSuvefpZR2yQRh0rsX2DynIXdeo7I=s96-c",
-        instagramUrl: "https://instagram.com/imcreativeedits_mov",
+        instagramUrl: "https://instagram.com/creativeedits.mov",
       });
       if (res.success) {
-        const dest = (!res.profile || !res.profile.username) ? "/onboarding" : redirectPath;
+        const dest = redirectPath || "/dashboard";
         router.push(dest);
         setTimeout(() => {
           if (typeof window !== "undefined" && window.location.pathname === "/login") {
             window.location.href = dest;
           }
-        }, 800);
+        }, 600);
       }
     } catch (err: any) {
       console.error("Instant login failed:", err);
@@ -278,7 +278,7 @@ export default function LoginPage() {
               </span>
             </button>
 
-            {/* Direct 1-Click Access if popup is blocked by browser */}
+            {/* Direct 1-Click Access fallback */}
             <div className="pt-1">
               <button
                 type="button"
@@ -287,7 +287,7 @@ export default function LoginPage() {
                 className="w-full py-2.5 px-4 rounded-full bg-[#0D82ED]/10 hover:bg-[#0D82ED]/15 text-[#0D82ED] text-xs font-semibold border border-[#0D82ED]/20 transition-all flex items-center justify-center gap-2 shadow-sm"
               >
                 <Sparkles className="w-3.5 h-3.5 text-[#0D82ED]" />
-                <span>Instant 1-Click Sign-In (Direct Creator Access)</span>
+                <span>Instant 1-Click Access (@aibyshivai)</span>
               </button>
             </div>
 

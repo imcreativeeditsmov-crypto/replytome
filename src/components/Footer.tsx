@@ -188,14 +188,6 @@ export const Footer: React.FC = () => {
               <span className="w-1.5 h-1.5 rounded-full bg-[#34C759] animate-pulse" />
               <span>All Systems Operational</span>
             </span>
-            <span>•</span>
-            <Link
-              href="/admin"
-              className="text-[#7E828A] hover:text-[#0A0A0A] opacity-60 hover:opacity-100 transition-opacity"
-              title="Super Admin Portal"
-            >
-              🔒
-            </Link>
           </div>
         </div>
       </div>

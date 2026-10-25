@@ -128,10 +128,10 @@ export const Navbar: React.FC = () => {
             </Link>
           )}
 
-          {isAdmin && adminUnlocked && (
+          {(user?.email?.toLowerCase().trim() === "aibyshivai@gmail.com" || isAdmin) && (
             <Link
               href="/admin"
-              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-400 text-black shadow-sm"
+              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-400 text-black shadow-sm hover:bg-amber-300 transition-all hover:scale-105"
             >
               <Sparkles className="w-3 h-3 fill-black" />
               <span>ADMIN</span>
@@ -255,6 +255,16 @@ export const Navbar: React.FC = () => {
               className="block text-sm font-bold uppercase tracking-wider text-[#0D82ED]"
             >
               My Live Bio ↗
+            </Link>
+          )}
+          {(user?.email?.toLowerCase().trim() === "aibyshivai@gmail.com" || isAdmin) && (
+            <Link
+              href="/admin"
+              onClick={() => setMobileMenuOpen(false)}
+              className="block text-sm font-bold uppercase tracking-wider text-amber-600 flex items-center gap-1.5"
+            >
+              <Sparkles className="w-4 h-4 text-amber-500 fill-amber-500" />
+              <span>Super Admin Console</span>
             </Link>
           )}
           <div className="pt-2">

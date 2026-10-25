@@ -78,13 +78,27 @@ export default function AdminPage() {
     setIsUnlocked(isAdminSessionUnlocked());
   }, []);
 
+  const isAuthorizedEmail =
+    user?.email?.toLowerCase().trim() === "aibyshivai@gmail.com" ||
+    userProfile?.email?.toLowerCase().trim() === "aibyshivai@gmail.com" ||
+    isPlatformAdmin(user) ||
+    isPlatformAdmin(userProfile);
+
+  // If not authorized as Super Admin, redirect away to homepage immediately
+  useEffect(() => {
+    if (!authLoading && !isAuthorizedEmail) {
+      router.replace("/");
+    }
+  }, [authLoading, isAuthorizedEmail, router]);
+
   const fetchStats = async () => {
     setLoading(true);
     try {
       const uidParam = encodeURIComponent(user?.uid || userProfile?.uid || "");
       const userParam = encodeURIComponent(userProfile?.username || "");
+      const emailParam = encodeURIComponent(user?.email || userProfile?.email || "aibyshivai@gmail.com");
       const res = await fetch(
-        `/api/admin/stats?requesterUid=${uidParam}&requesterUsername=${userParam}&passcode=creative2026`
+        `/api/admin/stats?requesterUid=${uidParam}&requesterUsername=${userParam}&requesterEmail=${emailParam}&passcode=creative2026`
       );
       const data = await res.json();
       if (data.success && data.stats) {
@@ -98,12 +112,29 @@ export default function AdminPage() {
   };
 
   useEffect(() => {
-    if (isUnlocked) {
+    if (isUnlocked && isAuthorizedEmail) {
       fetchStats();
     }
-  }, [isUnlocked]);
+  }, [isUnlocked, isAuthorizedEmail]);
 
-  // Security Gate: require admin passcode
+  // 1. Loading check
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[#F5F5F7] flex items-center justify-center p-4">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-[#0D82ED] border-t-transparent rounded-full animate-spin" />
+          <p className="text-xs text-[#7E828A] font-semibold">Verifying Admin Privileges...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 2. Strict: If not logged in as aibyshivai@gmail.com, NEVER show the Security Gate
+  if (!isAuthorizedEmail) {
+    return null;
+  }
+
+  // 3. Security Gate: Only visible to aibyshivai@gmail.com
   if (!isUnlocked) {
     return (
       <div className="min-h-screen bg-[#F5F5F7] flex items-center justify-center p-4">
@@ -117,9 +148,13 @@ export default function AdminPage() {
           </div>
 
           <div>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-900 border border-amber-200 text-[11px] font-bold mb-2">
+              <Sparkles className="w-3 h-3 text-amber-600" />
+              <span>Verified Super Admin: {user?.email || "aibyshivai@gmail.com"}</span>
+            </div>
             <h1 className="text-xl font-black text-[#0A0A0A] tracking-tight">Super Admin Security Gate</h1>
             <p className="text-xs text-[#7E828A] mt-2 leading-relaxed">
-              Platform management is restricted. Enter your private Admin Passcode to view creator analytics, user directory, and post gates.
+              Platform management is restricted exclusively to you. Enter your private Admin Passcode or tap below to unlock.
             </p>
           </div>
 
@@ -131,14 +166,14 @@ export default function AdminPage() {
                 setIsUnlocked(true);
                 setPasscodeError("");
               } else {
-                setPasscodeError("Incorrect Admin Passcode. Access denied.");
+                setPasscodeError("Incorrect Admin Passcode. Default is creative2026.");
               }
             }}
             className="space-y-4 text-left"
           >
             <div>
               <label className="block text-xs font-semibold text-[#0A0A0A] mb-1.5">
-                Admin Passcode
+                Admin Passcode (Default: creative2026)
               </label>
               <div className="relative">
                 <input
@@ -173,6 +208,21 @@ export default function AdminPage() {
               <Unlock className="w-3.5 h-3.5 stroke-[2.5]" />
             </button>
           </form>
+
+          {/* Instant 1-Click Unlock for Verified aibyshivai@gmail.com */}
+          <div className="pt-1">
+            <button
+              type="button"
+              onClick={() => {
+                setAdminSessionUnlocked(true);
+                setIsUnlocked(true);
+              }}
+              className="w-full py-2.5 px-4 rounded-xl bg-[#0D82ED]/10 hover:bg-[#0D82ED]/15 text-[#0D82ED] text-xs font-bold border border-[#0D82ED]/20 transition-all flex items-center justify-center gap-2 shadow-sm"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-[#0D82ED]" />
+              <span>Direct 1-Click Unlock (@aibyshivai)</span>
+            </button>
+          </div>
 
           <div className="pt-2 border-t border-black/[0.06]">
             <Link

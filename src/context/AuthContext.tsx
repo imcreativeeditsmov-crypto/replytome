@@ -75,13 +75,8 @@ function getInitialUser(): AuthUser | null {
     const raw = localStorage.getItem(AUTH_USER_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (
-        parsed &&
-        (parsed.uid === "shivai-creator-uid" ||
-          parsed.username === "aibyshivai" ||
-          parsed.email?.includes("aibyshivai") ||
-          parsed.displayName?.includes("Shivai"))
-      ) {
+      // Only discard the obsolete dummy mock UID
+      if (parsed && parsed.uid === "shivai-creator-uid") {
         localStorage.removeItem(AUTH_USER_KEY);
         localStorage.removeItem(AUTH_PROFILE_KEY);
         return null;
@@ -102,13 +97,8 @@ function getInitialProfile(): UserProfile | null {
     const raw = localStorage.getItem(AUTH_PROFILE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (
-        parsed &&
-        (parsed.uid === "shivai-creator-uid" ||
-          parsed.username === "aibyshivai" ||
-          parsed.email?.includes("aibyshivai") ||
-          parsed.displayName?.includes("Shivai"))
-      ) {
+      // Only discard the obsolete dummy mock UID
+      if (parsed && parsed.uid === "shivai-creator-uid") {
         localStorage.removeItem(AUTH_USER_KEY);
         localStorage.removeItem(AUTH_PROFILE_KEY);
         return null;
@@ -142,6 +132,33 @@ export async function fetchUserProfileSafely(
       return cached;
     }
   } catch {}
+
+  // Special Super Admin Provision for Owner (aibyshivai@gmail.com)
+  const isOwner =
+    fallbackEmail?.toLowerCase().trim() === "aibyshivai@gmail.com" ||
+    fallbackEmail?.toLowerCase().includes("aibyshivai");
+  if (isOwner) {
+    const ownerProfile: UserProfile = {
+      uid,
+      displayName: "shivai",
+      username: "aibyshivai",
+      email: "aibyshivai@gmail.com",
+      bio: "Creator & Platform Super Admin @creativeedits.mov",
+      photoURL: "https://lh3.googleusercontent.com/a/ACg8ocJ9qWnDSojX5KvmBmcLNNTSuvefpZR2yQRh0rsX2DynIXdeo7I=s96-c",
+      instagramUrl: "https://www.instagram.com/creativeedits.mov/",
+      isAdmin: true,
+      role: "admin",
+      createdAt: new Date().toISOString(),
+    };
+    try {
+      if (typeof window !== "undefined") {
+        localStorage.setItem(AUTH_PROFILE_KEY, JSON.stringify(ownerProfile));
+      }
+      PostService.saveUserProfile(ownerProfile).catch(() => {});
+      MockStore.addUser(ownerProfile);
+    } catch {}
+    return ownerProfile;
+  }
 
   // 2. MockStore quick check (memory, 0ms)
   try {

@@ -6,12 +6,15 @@ export async function GET(req: NextRequest) {
   try {
     const requesterUid = req.nextUrl.searchParams.get("requesterUid") || req.nextUrl.searchParams.get("uid");
     const requesterUsername = req.nextUrl.searchParams.get("requesterUsername") || req.nextUrl.searchParams.get("username");
+    const requesterEmail = req.nextUrl.searchParams.get("requesterEmail") || req.nextUrl.searchParams.get("email");
     const passcode = req.nextUrl.searchParams.get("passcode") || req.headers.get("x-admin-passcode");
 
     // Strictly authenticate requester as platform admin or by valid passcode
     let isAdmin = false;
 
-    if (passcode && (passcode === "creative2026" || passcode.length >= 6)) {
+    if (passcode === "creative2026") {
+      isAdmin = true;
+    } else if (requesterEmail && isPlatformAdmin({ email: requesterEmail })) {
       isAdmin = true;
     } else if (requesterUsername && isPlatformAdmin({ username: requesterUsername })) {
       isAdmin = true;
