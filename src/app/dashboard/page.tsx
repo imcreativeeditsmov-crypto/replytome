@@ -65,7 +65,7 @@ export default function DashboardPage() {
   // Delete confirmation
   const [deleteModalPost, setDeleteModalPost] = useState<Post | null>(null);
 
-  const origin = typeof window !== "undefined" ? window.location.origin : "https://replyto.me";
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://aibyshivai.com";
   const bioUrl = userProfile?.username ? `${origin}/${userProfile.username}` : "";
 
   // Load posts

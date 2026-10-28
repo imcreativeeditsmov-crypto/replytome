@@ -43,7 +43,7 @@ export const PublicPostView: React.FC<PublicPostViewProps> = ({
   );
   const [shareOpen, setShareOpen] = useState(false);
 
-  const origin = typeof window !== "undefined" ? window.location.origin : "https://replyto.me";
+  const origin = typeof window !== "undefined" ? window.location.origin : "https://aibyshivai.com";
   const postUrl = `${origin}/${username}/${slug}`;
 
   // Client hydration & sync check
@@ -209,7 +209,7 @@ export const PublicPostView: React.FC<PublicPostViewProps> = ({
         </main>
 
         <footer className="py-6 text-center border-t border-black/[0.06] text-xs text-[#86868B]">
-          Replyto.me — Smarter link in bio for creators.
+          aibyshivai — Exclusive AI Prompts & Resources by ShivAI.
         </footer>
       </div>
     );
@@ -408,11 +408,11 @@ export const PublicPostView: React.FC<PublicPostViewProps> = ({
           href="/"
           className="inline-flex items-center gap-1.5 text-xs font-medium text-[#86868B] hover:text-[#1D1D1F] transition-colors"
         >
-          <span>Powered by</span>
-          <span className="font-semibold text-[#1D1D1F]">Replyto.me</span>
+          <span>Curated on</span>
+          <span className="font-semibold text-[#1D1D1F]">aibyshivai</span>
         </Link>
         <p className="text-[11px] text-[#86868B] mt-0.5">
-          Smarter link in bio for creators.
+          Exclusive AI prompts & Hollywood VFX build sequences by ShivAI.
         </p>
       </footer>
 

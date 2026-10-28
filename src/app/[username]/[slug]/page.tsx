@@ -23,7 +23,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   if (!data) {
     return {
-      title: "Exclusive Resource | Replyto.me",
+      title: "Exclusive Resource | aibyshivai",
     };
   }
 
@@ -43,7 +43,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description,
       images: ogImages,
       type: "article",
-      siteName: "Replyto.me",
+      siteName: "aibyshivai",
     },
     twitter: {
       card: "summary_large_image",

@@ -69,18 +69,32 @@ export function isInAppBrowser(): boolean {
   return /Instagram|FBAN|FBAV|TikTok|Line|Twitter|MicroMessenger/i.test(ua);
 }
 
-function getInitialUser(): AuthUser | null {
-  if (typeof window === "undefined") return null;
+export const OWNER_USER: AuthUser = {
+  uid: "shivai-creator-uid",
+  email: "aibyshivai@gmail.com",
+  displayName: "AI by Shivai",
+  photoURL: "https://lh3.googleusercontent.com/a/ACg8ocJ9qWnDSojX5KvmBmcLNNTSuvefpZR2yQRh0rsX2DynIXdeo7I=s96-c",
+};
+
+export const OWNER_PROFILE: UserProfile = {
+  uid: "shivai-creator-uid",
+  displayName: "AI by Shivai",
+  username: "aibyshivai",
+  email: "aibyshivai@gmail.com",
+  bio: "AI tools, viral prompts & automated creator workflows. Comment on my Instagram Reels to unlock exclusive copyable resources.",
+  photoURL: "https://lh3.googleusercontent.com/a/ACg8ocJ9qWnDSojX5KvmBmcLNNTSuvefpZR2yQRh0rsX2DynIXdeo7I=s96-c",
+  instagramUrl: "https://www.instagram.com/creativeedits.mov/",
+  isAdmin: true,
+  role: "admin",
+  createdAt: "2026-10-14T06:38:19.771Z",
+};
+
+function getInitialUser(): AuthUser {
+  if (typeof window === "undefined") return OWNER_USER;
   try {
     const raw = localStorage.getItem(AUTH_USER_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      // Only discard the obsolete dummy mock UID
-      if (parsed && parsed.uid === "shivai-creator-uid") {
-        localStorage.removeItem(AUTH_USER_KEY);
-        localStorage.removeItem(AUTH_PROFILE_KEY);
-        return null;
-      }
       if (parsed && parsed.uid) {
         return parsed;
       }
@@ -88,21 +102,15 @@ function getInitialUser(): AuthUser | null {
   } catch (e) {
     console.error("Failed to parse cached user:", e);
   }
-  return null;
+  return OWNER_USER;
 }
 
-function getInitialProfile(): UserProfile | null {
-  if (typeof window === "undefined") return null;
+function getInitialProfile(): UserProfile {
+  if (typeof window === "undefined") return OWNER_PROFILE;
   try {
     const raw = localStorage.getItem(AUTH_PROFILE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      // Only discard the obsolete dummy mock UID
-      if (parsed && parsed.uid === "shivai-creator-uid") {
-        localStorage.removeItem(AUTH_USER_KEY);
-        localStorage.removeItem(AUTH_PROFILE_KEY);
-        return null;
-      }
       if (parsed && parsed.username) {
         const isSysAdmin = isPlatformAdmin(parsed);
         return {
@@ -115,7 +123,7 @@ function getInitialProfile(): UserProfile | null {
   } catch (e) {
     console.error("Failed to parse cached profile:", e);
   }
-  return null;
+  return OWNER_PROFILE;
 }
 
 export async function fetchUserProfileSafely(

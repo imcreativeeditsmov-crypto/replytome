@@ -12,21 +12,21 @@ export const Footer: React.FC = () => {
             1. Instant comment-to-unlock operates in the viewer&apos;s mobile browser with zero DM delay, no Instagram API rate limits, and full compatibility with Instagram in-app browsers.
           </p>
           <p className="mt-2">
-            2. Replyto.me is built for creators, photographers, VFX artists, and educators who want clean link delivery without spamming direct messages.
+            2. aibyshivai is an exclusive AI prompt engineering and creative VFX showcase platform maintained by ShivAI (@aibyshivai / @creativeedits.mov).
           </p>
         </div>
 
-        {/* Apple 4-Column Directory */}
+        {/* 4-Column Directory */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
           {/* Column 1: Product */}
           <div>
             <h4 className="text-[12px] font-semibold text-[#1D1D1F] tracking-tight mb-3">
-              Product
+              Platform
             </h4>
             <ul className="space-y-2 text-[12px]">
               <li>
-                <Link href="/#features" className="hover:text-[#1D1D1F] transition-colors">
-                  Comment Gating
+                <Link href="/aibyshivai" className="hover:text-[#1D1D1F] transition-colors">
+                  ShivAI Bio & Prompts
                 </Link>
               </li>
               <li>
@@ -36,36 +36,36 @@ export const Footer: React.FC = () => {
               </li>
               <li>
                 <Link href="/dashboard" className="hover:text-[#1D1D1F] transition-colors">
-                  Creator Analytics
+                  Creator Dashboard
                 </Link>
               </li>
               <li>
-                <Link href="/login" className="hover:text-[#1D1D1F] transition-colors">
-                  Instant Setup
+                <Link href="/admin" className="hover:text-[#1D1D1F] transition-colors">
+                  Owner Panel
                 </Link>
               </li>
             </ul>
           </div>
 
-          {/* Column 2: Solutions */}
+          {/* Column 2: Exclusive Prompts */}
           <div>
             <h4 className="text-[12px] font-semibold text-[#1D1D1F] tracking-tight mb-3">
-              For Creators
+              Featured Builds
             </h4>
             <ul className="space-y-2 text-[12px]">
               <li>
+                <Link href="/aibyshivai/cafe-build-prompt" className="hover:text-[#1D1D1F] transition-colors">
+                  Cafe Build FPV Prompt
+                </Link>
+              </li>
+              <li>
                 <Link href="/#demo" className="hover:text-[#1D1D1F] transition-colors">
-                  Interactive Live Reel Demo
+                  Restaurant VFX Sequence
                 </Link>
               </li>
               <li>
-                <Link href="/login" className="hover:text-[#1D1D1F] transition-colors">
-                  Claim Your Bio Handle
-                </Link>
-              </li>
-              <li>
-                <Link href="/#about" className="hover:text-[#1D1D1F] transition-colors">
-                  Platform Architecture
+                <Link href="/aibyshivai" className="hover:text-[#1D1D1F] transition-colors">
+                  All AI Resources
                 </Link>
               </li>
             </ul>
@@ -84,43 +84,28 @@ export const Footer: React.FC = () => {
               </li>
               <li>
                 <span className="hover:text-[#1D1D1F] transition-colors cursor-pointer">
-                  Reel Comment Strategies
+                  Hollywood VFX Prompts
                 </span>
               </li>
               <li>
                 <span className="hover:text-[#1D1D1F] transition-colors cursor-pointer">
-                  Mobile In-App Browser Guide
+                  Continuous Camera Takes
                 </span>
               </li>
               <li>
                 <span className="hover:text-[#1D1D1F] transition-colors cursor-pointer">
-                  Notion Templates
+                  Notion & PDF Guides
                 </span>
               </li>
             </ul>
           </div>
 
-          {/* Column 4: Replyto.me Account */}
+          {/* Column 4: Socials */}
           <div>
             <h4 className="text-[12px] font-semibold text-[#1D1D1F] tracking-tight mb-3">
-              Account
+              Connect
             </h4>
             <ul className="space-y-2 text-[12px]">
-              <li>
-                <Link href="/login" className="hover:text-[#1D1D1F] transition-colors">
-                  Sign In with Google
-                </Link>
-              </li>
-              <li>
-                <Link href="/login" className="hover:text-[#1D1D1F] transition-colors">
-                  Creator Handle Sign In
-                </Link>
-              </li>
-              <li>
-                <Link href="/dashboard" className="hover:text-[#1D1D1F] transition-colors">
-                  Manage Bio Links
-                </Link>
-              </li>
               <li>
                 <a
                   href="https://www.instagram.com/creativeedits.mov/"
@@ -131,6 +116,22 @@ export const Footer: React.FC = () => {
                   <InstagramIcon className="w-3.5 h-3.5 text-[#E1306C]" />
                   <span>@creativeedits.mov</span>
                 </a>
+              </li>
+              <li>
+                <a
+                  href="https://www.instagram.com/aibyshivai/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-[#0A0A0A] transition-colors flex items-center gap-1.5 font-bold text-[#0D82ED]"
+                >
+                  <InstagramIcon className="w-3.5 h-3.5 text-[#E1306C]" />
+                  <span>@aibyshivai</span>
+                </a>
+              </li>
+              <li>
+                <Link href="/dashboard" className="hover:text-[#1D1D1F] transition-colors">
+                  Manage Posts
+                </Link>
               </li>
             </ul>
           </div>
@@ -144,10 +145,10 @@ export const Footer: React.FC = () => {
             </div>
             <div className="text-left">
               <p className="text-xs font-bold text-[#0A0A0A]">
-                Website Designed & Built by <span className="text-[#0D82ED]">Creative Edits</span>
+                Platform Designed & Curated by <span className="text-[#0D82ED]">ShivAI</span>
               </p>
               <p className="text-[11px] text-[#7E828A]">
-                Visual effects, motion graphics & full-stack creator platform engineering
+                Visual effects, cinema prompts & creator automations @creativeedits.mov
               </p>
             </div>
           </div>
@@ -167,11 +168,11 @@ export const Footer: React.FC = () => {
         <div className="pt-6 border-t border-black/[0.08] flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px]">
           <div className="flex flex-wrap items-center gap-2">
             <span className="font-medium text-[#0A0A0A]">
-              Copyright © {new Date().getFullYear()} Replyto.me Inc.
+              Copyright © {new Date().getFullYear()} aibyshivai.
             </span>
             <span>•</span>
             <span>
-              Crafted with ❤️ by{" "}
+              Curated with ❤️ by{" "}
               <a
                 href="https://www.instagram.com/creativeedits.mov/"
                 target="_blank"

@@ -265,9 +265,9 @@ export default function AdminPage() {
               </div>
               <div>
                 <h1 className="text-sm font-bold tracking-tight text-[#1D1D1F] flex items-center gap-1.5">
-                  <span>Replyto.me Admin Console</span>
+                  <span>aibyshivai Owner Console</span>
                   <span className="text-[10px] font-semibold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full border border-amber-200">
-                    Super Admin
+                    Platform Owner
                   </span>
                 </h1>
                 <p className="text-[11px] text-[#6E6E73]">
@@ -457,9 +457,9 @@ export default function AdminPage() {
           <div className="bg-white rounded-3xl border border-[#E5E5EA] shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-[#E5E5EA] flex items-center justify-between">
               <div>
-                <h2 className="text-sm font-bold text-[#1D1D1F]">All Registered Creators</h2>
+                <h2 className="text-sm font-bold text-[#1D1D1F]">Platform Creator Profiles</h2>
                 <p className="text-xs text-[#6E6E73]">
-                  Detailed breakdown of every creator registered on Replyto.me
+                  Detailed breakdown of profiles managed on aibyshivai
                 </p>
               </div>
               <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[#F5F5F7] text-[#6E6E73] border border-[#E5E5EA]">

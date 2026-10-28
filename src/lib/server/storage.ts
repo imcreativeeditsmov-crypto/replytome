@@ -159,6 +159,21 @@ export const ServerStorage = {
   getPosts(uid?: string): Post[] {
     const store = ensureStoreFile();
     if (uid) {
+      const isOwnerUid =
+        uid === "shivai-creator-uid" ||
+        uid === "owner-aibyshivai-uid" ||
+        uid === "ePAdjwa25FNWpPKXCzcI42OE7Ox2";
+      if (isOwnerUid) {
+        return store.posts
+          .filter(
+            (p) =>
+              p.uid === uid ||
+              p.uid === "shivai-creator-uid" ||
+              p.uid === "owner-aibyshivai-uid" ||
+              p.uid === "ePAdjwa25FNWpPKXCzcI42OE7Ox2"
+          )
+          .sort((a, b) => a.order - b.order);
+      }
       return store.posts.filter((p) => p.uid === uid).sort((a, b) => a.order - b.order);
     }
     return store.posts.sort((a, b) => a.order - b.order);
@@ -166,10 +181,19 @@ export const ServerStorage = {
 
   getPublishedPostsByUsername(username: string): Post[] {
     const store = ensureStoreFile();
-    const user = this.getUserByUsername(username);
+    const cleanUser = username.toLowerCase().trim().replace(/^@/, "");
+    const user = this.getUserByUsername(cleanUser);
     if (!user) return [];
+    const isOwner = cleanUser === "aibyshivai" || isPlatformAdmin(user);
     return store.posts
-      .filter((p) => p.uid === user.uid && p.status === "published")
+      .filter((p) => {
+        if (p.status !== "published") return false;
+        if (p.uid === user.uid) return true;
+        if (isOwner && (p.uid === "shivai-creator-uid" || p.uid === "owner-aibyshivai-uid" || p.uid === "ePAdjwa25FNWpPKXCzcI42OE7Ox2")) {
+          return true;
+        }
+        return false;
+      })
       .sort((a, b) => a.order - b.order);
   },
 

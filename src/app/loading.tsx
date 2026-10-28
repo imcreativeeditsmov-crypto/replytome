@@ -7,7 +7,7 @@ export default function Loading() {
         <div className="w-5 h-5 border-2 border-[#0071E3] border-t-transparent rounded-full animate-spin" />
       </div>
       <p className="text-xs font-semibold text-[#86868B] tracking-tight">
-        Loading Replyto.me...
+        Loading aibyshivai...
       </p>
     </div>
   );

@@ -16,11 +16,11 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   if (!user) {
     return {
-      title: "Creator Not Found | Replyto.me",
+      title: "Creator Not Found | aibyshivai",
     };
   }
 
-  const title = `${user.displayName} (@${user.username}) — Replyto.me`;
+  const title = `${user.displayName} (@${user.username}) — aibyshivai`;
   const description = user.bio || `Check out ${user.displayName}'s exclusive resources and links.`;
 
   return {

@@ -72,11 +72,11 @@ export const Navbar: React.FC = () => {
               isTransparent ? "text-white" : "text-[#0A0A0A]"
             }`}
           >
-            Replyto<span className={isTransparent ? "text-[#D2F824]" : "text-[#0D82ED]"}>.me</span>
+            aibyshiv<span className={isTransparent ? "text-[#D2F824]" : "text-[#0D82ED]"}>ai</span>
           </span>
         </Link>
 
-        {/* Center Desktop Navigation: Uppercase, tracking-wider */}
+        {/* Center Desktop Navigation */}
         <nav
           className={`hidden md:flex items-center gap-8 text-[12px] font-bold uppercase tracking-widest transition-colors ${
             isTransparent ? "text-white/85" : "text-[#7E828A]"
@@ -96,15 +96,7 @@ export const Navbar: React.FC = () => {
               isTransparent ? "hover:text-white" : "hover:text-[#0A0A0A]"
             }`}
           >
-            Services
-          </Link>
-          <Link
-            href="/#about"
-            className={`transition-colors ${
-              isTransparent ? "hover:text-white" : "hover:text-[#0A0A0A]"
-            }`}
-          >
-            About Us
+            Features
           </Link>
           <Link
             href="/#demo"
@@ -116,84 +108,54 @@ export const Navbar: React.FC = () => {
             <ChevronDown className="w-3 h-3 opacity-70" />
           </Link>
 
-          {userProfile?.username && (
-            <Link
-              href={`/${userProfile.username}`}
-              className={`transition-colors flex items-center gap-1 ${
-                isTransparent ? "hover:text-white" : "hover:text-[#0A0A0A]"
-              }`}
-            >
-              <span>My Bio</span>
-              <ArrowUpRight className="w-3.5 h-3.5 opacity-80" />
-            </Link>
-          )}
-
-          {(user?.email?.toLowerCase().trim() === "aibyshivai@gmail.com" || isAdmin) && (
-            <Link
-              href="/admin"
-              className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-400 text-black shadow-sm hover:bg-amber-300 transition-all hover:scale-105"
-            >
-              <Sparkles className="w-3 h-3 fill-black" />
-              <span>ADMIN</span>
-            </Link>
-          )}
-        </nav>
-
-        {/* Right CTA Button: Neon Lime Pill "GET STARTED" */}
-        <div className="hidden sm:flex items-center gap-3">
-          {user ? (
-            <div className="flex items-center gap-2">
-              <Link
-                href="/dashboard"
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
-                  isTransparent
-                    ? "bg-white/15 text-white hover:bg-white/25 border border-white/20"
-                    : "bg-[#F4F5F7] text-[#0A0A0A] hover:bg-[#EAEBED]"
-                }`}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={avatarUrl}
-                  alt={displayName}
-                  referrerPolicy="no-referrer"
-                  crossOrigin="anonymous"
-                  className="w-4 h-4 rounded-full object-cover"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = "/avatar.png";
-                  }}
-                />
-                <span className="max-w-[100px] truncate">{displayName}</span>
-              </Link>
-              <button
-                onClick={() => signOut()}
-                className={`p-2 rounded-full transition-colors ${
-                  isTransparent
-                    ? "text-white/70 hover:text-white hover:bg-white/10"
-                    : "text-[#7E828A] hover:text-[#0A0A0A] hover:bg-black/5"
-                }`}
-                title="Sign out"
-              >
-                <LogOut className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          ) : (
-            <Link
-              href="/login"
-              className={`text-xs font-bold uppercase tracking-wider transition-colors mr-2 ${
-                isTransparent
-                  ? "text-white/90 hover:text-white"
-                  : "text-[#7E828A] hover:text-[#0A0A0A]"
-              }`}
-            >
-              Sign In
-            </Link>
-          )}
+          <Link
+            href="/aibyshivai"
+            className={`transition-colors flex items-center gap-1 ${
+              isTransparent ? "hover:text-white" : "hover:text-[#0A0A0A]"
+            }`}
+          >
+            <span>ShivAI Bio</span>
+            <ArrowUpRight className="w-3.5 h-3.5 opacity-80" />
+          </Link>
 
           <Link
-            href={user ? "/dashboard" : "/login"}
+            href="/admin"
+            className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-400 text-black shadow-sm hover:bg-amber-300 transition-all hover:scale-105"
+          >
+            <Sparkles className="w-3 h-3 fill-black" />
+            <span>OWNER</span>
+          </Link>
+        </nav>
+
+        {/* Right Action: Direct Dashboard access for ShivAI */}
+        <div className="hidden sm:flex items-center gap-3">
+          <Link
+            href="/dashboard"
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
+              isTransparent
+                ? "bg-white/15 text-white hover:bg-white/25 border border-white/20"
+                : "bg-[#F4F5F7] text-[#0A0A0A] hover:bg-[#EAEBED]"
+            }`}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={avatarUrl}
+              alt={displayName}
+              referrerPolicy="no-referrer"
+              crossOrigin="anonymous"
+              className="w-4 h-4 rounded-full object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = "/avatar.png";
+              }}
+            />
+            <span className="max-w-[100px] truncate">@aibyshivai</span>
+          </Link>
+
+          <Link
+            href="/dashboard"
             className="btn-lime text-xs font-black uppercase tracking-wider"
           >
-            <span>{user ? "Dashboard" : "Get Started"}</span>
+            <span>Dashboard</span>
             <ArrowUpRight className="w-3.5 h-3.5 stroke-[2.5]" />
           </Link>
         </div>
@@ -201,10 +163,10 @@ export const Navbar: React.FC = () => {
         {/* Mobile menu trigger */}
         <div className="flex sm:hidden items-center gap-2">
           <Link
-            href={user ? "/dashboard" : "/login"}
+            href="/dashboard"
             className="btn-lime text-[11px] px-3.5 py-1.5"
           >
-            Start
+            Dashboard
           </Link>
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -228,18 +190,11 @@ export const Navbar: React.FC = () => {
             Home
           </Link>
           <Link
-            href="/#features"
+            href="/aibyshivai"
             onClick={() => setMobileMenuOpen(false)}
-            className="block text-sm font-bold uppercase tracking-wider text-[#7E828A]"
+            className="block text-sm font-bold uppercase tracking-wider text-[#0A0A0A]"
           >
-            Services
-          </Link>
-          <Link
-            href="/#about"
-            onClick={() => setMobileMenuOpen(false)}
-            className="block text-sm font-bold uppercase tracking-wider text-[#7E828A]"
-          >
-            About Us
+            ShivAI Bio
           </Link>
           <Link
             href="/#demo"
@@ -248,32 +203,28 @@ export const Navbar: React.FC = () => {
           >
             Live Demo
           </Link>
-          {userProfile?.username && (
-            <Link
-              href={`/${userProfile.username}`}
-              onClick={() => setMobileMenuOpen(false)}
-              className="block text-sm font-bold uppercase tracking-wider text-[#0D82ED]"
-            >
-              My Live Bio ↗
-            </Link>
-          )}
-          {(user?.email?.toLowerCase().trim() === "aibyshivai@gmail.com" || isAdmin) && (
-            <Link
-              href="/admin"
-              onClick={() => setMobileMenuOpen(false)}
-              className="block text-sm font-bold uppercase tracking-wider text-amber-600 flex items-center gap-1.5"
-            >
-              <Sparkles className="w-4 h-4 text-amber-500 fill-amber-500" />
-              <span>Super Admin Console</span>
-            </Link>
-          )}
+          <Link
+            href="/dashboard"
+            onClick={() => setMobileMenuOpen(false)}
+            className="block text-sm font-bold uppercase tracking-wider text-[#0D82ED]"
+          >
+            Dashboard
+          </Link>
+          <Link
+            href="/admin"
+            onClick={() => setMobileMenuOpen(false)}
+            className="block text-sm font-bold uppercase tracking-wider text-amber-600 flex items-center gap-1.5"
+          >
+            <Sparkles className="w-4 h-4 text-amber-500 fill-amber-500" />
+            <span>Owner Panel</span>
+          </Link>
           <div className="pt-2">
             <Link
-              href={user ? "/dashboard" : "/login"}
+              href="/dashboard"
               onClick={() => setMobileMenuOpen(false)}
               className="btn-lime w-full justify-center"
             >
-              Get Started ↗
+              Open Dashboard ↗
             </Link>
           </div>
         </div>

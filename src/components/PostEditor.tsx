@@ -658,7 +658,7 @@ export const PostEditor: React.FC<PostEditorProps> = ({
           </div>
 
           <PhoneMockup
-            urlBarText={`replyto.me/${userProfile?.username || "creator"}/${slug || "preview"}`}
+            urlBarText={`aibyshivai.com/${userProfile?.username || "aibyshivai"}/${slug || "preview"}`}
           >
             <div className="p-4 space-y-4 pb-12">
               <div>

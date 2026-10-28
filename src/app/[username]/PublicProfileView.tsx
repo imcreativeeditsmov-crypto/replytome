@@ -54,7 +54,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({
   const handleShare = () => {
     if (navigator.share) {
       navigator.share({
-        title: `${user.displayName} on Replyto.me`,
+        title: `${user.displayName} on aibyshivai`,
         text: user.bio,
         url: profileUrl,
       }).catch(() => setShareOpen(true));
@@ -72,10 +72,10 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({
             href="/"
             className="flex items-center gap-1.5 text-xs font-medium text-[#86868B] hover:text-[#1D1D1F] transition-colors"
           >
-            <div className="w-5 h-5 rounded-md bg-[#1D1D1F] text-white flex items-center justify-center font-semibold text-[10px]">
-              R
+            <div className="w-5 h-5 rounded-md bg-[#0D82ED] text-white flex items-center justify-center font-semibold text-[10px]">
+              S
             </div>
-            <span>Replyto.me</span>
+            <span>aibyshivai</span>
           </Link>
 
           <button
@@ -237,11 +237,11 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({
           href="/"
           className="inline-flex items-center gap-1.5 font-medium text-[#86868B] hover:text-[#1D1D1F] transition-colors"
         >
-          <span>Powered by</span>
-          <span className="font-semibold text-[#1D1D1F]">Replyto.me</span>
+          <span>Curated on</span>
+          <span className="font-semibold text-[#1D1D1F]">aibyshivai</span>
         </Link>
         <p className="text-[11px] text-[#86868B] mt-1">
-          Smarter link in bio for Instagram Reel creators.
+          Exclusive AI prompts & Hollywood VFX build sequences by ShivAI.
         </p>
       </footer>
 
@@ -249,7 +249,7 @@ export const PublicProfileView: React.FC<PublicProfileViewProps> = ({
       <ShareModal
         isOpen={shareOpen}
         onClose={() => setShareOpen(false)}
-        title={`${user.displayName} on Replyto.me`}
+        title={`${user.displayName} on aibyshivai`}
         url={profileUrl}
       />
     </div>

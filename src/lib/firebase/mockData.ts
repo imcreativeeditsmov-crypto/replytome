@@ -2,15 +2,15 @@ import { UserProfile, Post, PostTextBlock } from "@/types";
 import { isPlatformAdmin } from "@/lib/auth/adminCheck";
 
 export const INITIAL_DEMO_USER: UserProfile = {
-  uid: "maya-creator-uid",
-  displayName: "Maya Lin",
-  username: "mayacreates",
-  email: "maya@replyto.me",
-  bio: "Creative Director & Motion Artist. Comment on my Instagram Reels to unlock exclusive copyable resources.",
-  photoURL: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80",
-  instagramUrl: "https://www.instagram.com/mayacreates/",
-  isAdmin: false,
-  role: "creator",
+  uid: "shivai-creator-uid",
+  displayName: "AI by Shivai",
+  username: "aibyshivai",
+  email: "aibyshivai@gmail.com",
+  bio: "AI tools, viral prompts & automated creator workflows. Comment on my Instagram Reels to unlock exclusive copyable resources.",
+  photoURL: "https://lh3.googleusercontent.com/a/ACg8ocJ9qWnDSojX5KvmBmcLNNTSuvefpZR2yQRh0rsX2DynIXdeo7I=s96-c",
+  instagramUrl: "https://www.instagram.com/creativeedits.mov/",
+  isAdmin: true,
+  role: "admin",
   createdAt: "2026-10-14T06:38:19.771Z",
 };
 

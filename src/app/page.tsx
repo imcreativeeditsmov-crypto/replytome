@@ -134,8 +134,8 @@ export default function LandingHomePage() {
               transition={{ duration: 0.4 }}
               className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-white leading-[1.08]"
             >
-              Building the future with <br />
-              <span className="text-white">smart link in bio</span>
+              Exclusive AI Prompts & VFX with <br />
+              <span className="text-[#D2F824]">aibyshivai</span>
             </motion.h1>
 
             <motion.p
@@ -144,22 +144,21 @@ export default function LandingHomePage() {
               transition={{ duration: 0.4, delay: 0.1 }}
               className="text-white/85 text-sm sm:text-base md:text-lg max-w-2xl mx-auto font-medium leading-relaxed"
             >
-              We help creators and brands unlock growth and efficiency through automated
-              Instagram Reel comment-to-unlock and intelligent link delivery.
+              Curated Hollywood-grade VFX build prompts, continuous FPV camera takes, and instant Instagram Reel comment-to-unlock resources by ShivAI.
             </motion.p>
 
-            {/* Two Action Buttons matching Aeline */}
+            {/* Two Action Buttons */}
             <motion.div
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.2 }}
               className="flex items-center justify-center gap-3 pt-2"
             >
-              <a href="#demo" className="btn-glass-hero">
-                <span>View Demo</span>
-              </a>
-              <Link href="/login" className="btn-lime">
-                <span>Get Started</span>
+              <Link href="/aibyshivai" className="btn-glass-hero">
+                <span>Explore Prompts</span>
+              </Link>
+              <Link href="/dashboard" className="btn-lime">
+                <span>Open Dashboard</span>
                 <ArrowUpRight className="w-4 h-4 stroke-[2.5]" />
               </Link>
             </motion.div>
@@ -185,19 +184,19 @@ export default function LandingHomePage() {
               {/* Card 2 (Left): Pricing / Stats card */}
               <div className="hidden md:block w-40 h-52 rounded-2xl bg-white text-[#0A0A0A] p-3.5 shadow-2xl border border-black/5 transform -rotate-6 translate-y-3 transition-transform hover:translate-y-0 hover:rotate-0 duration-300">
                 <div className="text-[10px] font-bold text-[#7E828A]">Total Unlocks</div>
-                <div className="text-sm font-extrabold text-[#0D82ED]">$4,900+</div>
+                <div className="text-sm font-extrabold text-[#0D82ED]">120k+</div>
                 <div className="space-y-2 mt-4 text-[10px]">
                   <div className="flex justify-between border-b pb-1">
                     <span className="text-[#7E828A]">Views</span>
-                    <span className="font-bold">82k</span>
+                    <span className="font-bold">520k</span>
                   </div>
                   <div className="flex justify-between border-b pb-1">
                     <span className="text-[#7E828A]">Comments</span>
-                    <span className="font-bold">12.4k</span>
+                    <span className="font-bold">48.2k</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-[#7E828A]">Rate</span>
-                    <span className="font-bold text-emerald-600">89.2%</span>
+                    <span className="font-bold text-emerald-600">96.4%</span>
                   </div>
                 </div>
               </div>
@@ -207,22 +206,25 @@ export default function LandingHomePage() {
                 <div className="relative w-full h-36 rounded-xl overflow-hidden bg-zinc-100">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80"
-                    alt="Maya Lin"
+                    src="https://lh3.googleusercontent.com/a/ACg8ocJ9qWnDSojX5KvmBmcLNNTSuvefpZR2yQRh0rsX2DynIXdeo7I=s96-c"
+                    alt="ShivAI"
                     className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = "/avatar.png";
+                    }}
                   />
                   <div className="absolute top-2 left-2 px-2 py-0.5 rounded-full bg-black/60 text-white text-[9px] font-bold backdrop-blur-sm">
-                    Verified
+                    Verified Owner
                   </div>
                 </div>
                 <div className="p-1">
                   <div className="flex items-center justify-between text-[11px] font-bold">
-                    <span>Maya Lin</span>
-                    <span className="text-[#0D82ED]">@mayacreates</span>
+                    <span>ShivAI</span>
+                    <span className="text-[#0D82ED]">@aibyshivai</span>
                   </div>
                   <div className="mt-1 flex items-center justify-between px-2 py-1 bg-[#F4F5F7] rounded-lg text-[10px] font-mono font-bold">
-                    <span>$2,870</span>
-                    <span className="text-emerald-600">+$1,200</span>
+                    <span>VFX Creator</span>
+                    <span className="text-emerald-600">Active</span>
                   </div>
                 </div>
               </div>
@@ -408,7 +410,7 @@ export default function LandingHomePage() {
             <div className="flex items-center justify-between z-10">
               <div className="font-extrabold text-base tracking-wider flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-[#D2F824]" />
-                <span>REPLYTO</span>
+                <span>AIBYSHIVAI</span>
               </div>
               <div className="w-8 h-8 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center text-white">
                 <BarChart3 className="w-4 h-4" />
@@ -571,7 +573,7 @@ export default function LandingHomePage() {
                   </p>
                   <div className="flex items-center gap-2 text-[11px] text-white/70">
                     <InstagramIcon className="w-3.5 h-3.5 text-[#E1306C]" />
-                    <span>replyto.me/creativeedits</span>
+                    <span>aibyshivai.com/cafe-build-prompt</span>
                   </div>
                 </div>
               </div>
@@ -677,59 +679,43 @@ export default function LandingHomePage() {
       </section>
 
       {/* ========================================================================= */}
-      {/* 5. CLAIM HANDLE CTA SECTION                                              */}
+      {/* 5. AIBYSHIVAI SHOWCASE & PLATFORM ACCESS                                  */}
       {/* ========================================================================= */}
       <section className="py-20 px-4 sm:px-6 max-w-4xl mx-auto w-full text-center space-y-6">
         <span className="text-xs font-extrabold uppercase tracking-widest text-[#0D82ED]">
-          Get Started in 30 Seconds
+          Curated by ShivAI
         </span>
         <h2 className="text-3xl sm:text-5xl font-black tracking-tight text-[#0A0A0A]">
-          Claim your custom bio handle
+          Exclusive Prompts & VFX Workflows
         </h2>
         <p className="text-sm sm:text-base text-[#7E828A] max-w-xl mx-auto font-medium">
-          Reserve your username now. Start automating your Reel comment-to-unlock links today with 0 setup fee.
+          Explore complete Hollywood cinema build sequences, keyword-gated resources, and creator toolkits by @aibyshivai.
         </p>
 
-        {/* Claim Input Pill */}
-        <form onSubmit={handleClaim} className="max-w-md mx-auto pt-2">
-          <div className="flex items-center p-1.5 pl-4 rounded-full bg-[#F4F5F7] border border-black/[0.08] shadow-sm focus-within:border-[#0D82ED] focus-within:ring-2 focus-within:ring-[#0D82ED]/20 transition-all">
-            <span className="text-xs sm:text-sm font-semibold text-[#7E828A] select-none">
-              replyto.me/
-            </span>
-            <input
-              type="text"
-              value={handleInput}
-              onChange={(e) => {
-                setHandleInput(e.target.value);
-                setHandleError(null);
-              }}
-              placeholder="yourname"
-              className="flex-1 bg-transparent text-xs sm:text-sm text-[#0A0A0A] font-bold outline-none pl-1"
-            />
-            <button type="submit" className="btn-lime text-xs px-5 py-2.5">
-              <span>Claim</span>
-              <ArrowUpRight className="w-3.5 h-3.5 stroke-[2.5]" />
-            </button>
-          </div>
-          {handleError && (
-            <p className="text-xs font-semibold text-red-600 mt-2 text-center">
-              {handleError}
-            </p>
-          )}
-        </form>
+        {/* Action Buttons for ShivAI Platform */}
+        <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+          <Link href="/aibyshivai" className="btn-lime text-xs px-6 py-3 font-black uppercase tracking-wider">
+            <span>Explore All Prompts</span>
+            <ArrowUpRight className="w-3.5 h-3.5 stroke-[2.5]" />
+          </Link>
+          <Link href="/dashboard" className="px-5 py-3 rounded-full bg-[#0A0A0A] text-white hover:bg-[#222] text-xs font-bold transition-all shadow-sm flex items-center gap-2">
+            <span>Creator Dashboard</span>
+            <ArrowUpRight className="w-3.5 h-3.5 stroke-[2.5]" />
+          </Link>
+        </div>
 
-        <div className="flex items-center justify-center gap-6 text-xs text-[#7E828A] font-medium pt-2">
+        <div className="flex items-center justify-center gap-6 text-xs text-[#7E828A] font-medium pt-4">
           <span className="flex items-center gap-1.5">
             <Check className="w-3.5 h-3.5 text-emerald-600 stroke-[2.5]" />
-            <span>Free Forever tier</span>
+            <span>Verified AI Prompts</span>
           </span>
           <span className="flex items-center gap-1.5">
             <Check className="w-3.5 h-3.5 text-emerald-600 stroke-[2.5]" />
-            <span>No DM API restrictions</span>
+            <span>Hollywood Continuous FPV</span>
           </span>
           <span className="flex items-center gap-1.5">
             <Check className="w-3.5 h-3.5 text-emerald-600 stroke-[2.5]" />
-            <span>Instant setup</span>
+            <span>Zero DM limits</span>
           </span>
         </div>
       </section>

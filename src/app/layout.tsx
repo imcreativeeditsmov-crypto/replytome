@@ -17,33 +17,35 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://replyto.me"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://aibyshivai.com"),
   title: {
-    default: "Replyto.me — Smarter link in bio for creators",
-    template: "%s | Replyto.me",
+    default: "aibyshivai — Exclusive AI Prompts, VFX Builds & Resources",
+    template: "%s | aibyshivai",
   },
   description:
-    "Turn Reel comments into instant conversions with automated keyword-to-unlock link in bio.",
+    "Official AI Prompts, Hollywood VFX sequences, and creative workflows curated exclusively by ShivAI (@aibyshivai / @creativeedits.mov).",
   keywords: [
-    "link in bio",
+    "aibyshivai",
+    "AI by Shivai",
+    "ShivAI",
+    "VFX prompts",
+    "AI prompts",
     "Instagram reel unlock",
-    "comment to unlock",
-    "creator tools",
-    "reply to me",
+    "creative edits",
   ],
-  authors: [{ name: "Replyto.me" }],
+  authors: [{ name: "aibyshivai" }],
   openGraph: {
-    title: "Replyto.me — Smarter link in bio for creators",
+    title: "aibyshivai — Exclusive AI Prompts, VFX Builds & Resources",
     description:
-      "Automated comment-to-unlock link in bio for Instagram creators.",
-    siteName: "Replyto.me",
+      "Official AI Prompts, Hollywood VFX sequences, and creative workflows curated by ShivAI.",
+    siteName: "aibyshivai",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Replyto.me — Smarter link in bio for creators",
+    title: "aibyshivai — Exclusive AI Prompts, VFX Builds & Resources",
     description:
-      "Automated comment-to-unlock link in bio for creators.",
+      "Official AI Prompts, Hollywood VFX sequences, and creative workflows curated by ShivAI.",
   },
   icons: {
     icon: "/favicon.ico",

@@ -264,14 +264,14 @@ export default function OnboardingPage() {
       >
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-10 h-10 rounded-xl bg-[#1D1D1F] text-white font-semibold text-base flex items-center justify-center mx-auto mb-3 shadow-sm">
-            R
+          <div className="w-10 h-10 rounded-xl bg-[#0D82ED] text-white font-semibold text-base flex items-center justify-center mx-auto mb-3 shadow-sm">
+            S
           </div>
           <h1 className="text-2xl font-semibold text-[#1D1D1F] tracking-tight">
             Claim your link in bio
           </h1>
           <p className="text-xs text-[#86868B] mt-1">
-            Set up your public Replyto.me creator handle.
+            Set up your public aibyshivai creator handle.
           </p>
         </div>
 
